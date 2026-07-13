@@ -1,4 +1,5 @@
 .app-shell {
+<<<<<<< HEAD
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -7,4 +8,78 @@
   padding: 2rem;
   text-align: center;
   gap: 0.75rem;
+=======
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.app-shell__header {
+  margin-bottom: 1.5rem;
+}
+
+.app-shell__eyebrow {
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: #5469d4;
+  font-weight: 700;
+}
+
+.app-shell__subtitle {
+  max-width: 680px;
+  color: #4b5563;
+  margin-top: 0.75rem;
+}
+
+.app-shell__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.section-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.section-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.section-card p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.section-card__status {
+  display: inline-block;
+  margin-top: 0.9rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app-shell__notes {
+  margin-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.25rem;
+}
+
+.app-shell__notes h2 {
+  margin: 0 0 0.5rem;
+}
+
+.app-shell__notes p {
+  color: #4b5563;
+  max-width: 720px;
+>>>>>>> origin/main
 }

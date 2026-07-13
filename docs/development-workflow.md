@@ -1,5 +1,6 @@
 # Development Workflow
 
+<<<<<<< HEAD
 ## Qualitätsprüfungen vor einem Pull Request
 
 Vor jedem Pull Request müssen lokal die folgenden Prüfungen erfolgreich laufen:
@@ -19,3 +20,11 @@ Jeder Pull Request und jede Änderung auf dem Branch `main` löst den Workflow i
 2. Lint-Prüfung
 3. Tests
 4. Produktionsbuild
+=======
+## Ziel
+Hier werden Arbeitsweise, Tooling und Qualitätsstandards festgehalten.
+
+## Status
+- Grundworkflow wird etabliert
+- Build, Lint und Dokumentation sind Teil der Routine
+>>>>>>> origin/main
