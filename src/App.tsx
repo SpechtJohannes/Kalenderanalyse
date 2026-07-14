@@ -1,13 +1,4 @@
 import './App.css'
-<<<<<<< HEAD
-
-function App() {
-  return (
-    <main className="app-shell">
-      <h1>Kalenderanalyse</h1>
-      <p>Projektgrundlage für die weitere Entwicklung.</p>
-    </main>
-=======
 import { AnalysisFeature } from './features/analysis/AnalysisFeature'
 import { CalendarFeature } from './features/calendar/CalendarFeature'
 import { InsightsFeature } from './features/insights/InsightsFeature'
@@ -34,7 +25,6 @@ function App() {
         </p>
       </section>
     </AppShell>
->>>>>>> origin/main
   )
 }
 

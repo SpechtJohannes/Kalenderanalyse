@@ -1,0 +1,101 @@
+/* Metrics Display Styles */
+
+.metrics-display {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.metrics-summary {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin-bottom: var(--space-6);
+}
+
+.metric-card {
+  padding: var(--space-4);
+  background: linear-gradient(135deg, var(--color-surface-muted) 0%, var(--color-surface-accent) 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.metric-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-card__value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.events-by-day {
+  margin-top: var(--space-6);
+}
+
+.events-by-day h3 {
+  margin: 0 0 var(--space-4);
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.events-by-day__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.events-by-day__table thead {
+  background-color: var(--color-table-header);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.events-by-day__table th {
+  padding: var(--space-3);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.events-by-day__table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.events-by-day__table tbody tr:hover {
+  background-color: var(--color-row-hover);
+}
+
+.analysis-feature {
+  width: 100%;
+}
+
+.analysis-feature__content {
+  margin-top: var(--space-4);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .metrics-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .events-by-day__table {
+    font-size: 0.8rem;
+  }
+
+  .events-by-day__table th,
+  .events-by-day__table td {
+    padding: var(--space-2);
+  }
+}

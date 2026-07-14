@@ -6,6 +6,6 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /kalenderanalyse/i })).toBeInTheDocument()
-    expect(screen.getByText(/projektgrundlage für die weitere entwicklung/i)).toBeInTheDocument()
+    expect(screen.getByText(/strukturierte Basis/i)).toBeInTheDocument()
   })
 })
