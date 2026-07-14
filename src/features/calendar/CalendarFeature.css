@@ -1,0 +1,32 @@
+.calendar-import {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.calendar-import label {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.calendar-import input {
+  max-width: 100%;
+  color: var(--color-text);
+}
+
+.calendar-import__file,
+.calendar-import__status {
+  margin: 0;
+}
+
+.calendar-import__status--error {
+  color: var(--color-error);
+}
+
+.calendar-import__status--success {
+  color: var(--color-success);
+}
+
+.calendar-import__status--warning {
+  color: var(--color-warning);
+}

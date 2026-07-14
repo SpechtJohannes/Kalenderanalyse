@@ -8,6 +8,8 @@
   --color-text: #111827;
   --color-text-muted: #4b5563;
   --color-error: #b91c1c;
+  --color-success: #047857;
+  --color-warning: #a16207;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
@@ -42,6 +44,8 @@
     --color-text: #f9fafb;
     --color-text-muted: #d1d5db;
     --color-error: #fca5a5;
+    --color-success: #6ee7b7;
+    --color-warning: #fde047;
   }
 }
 

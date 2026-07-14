@@ -13,7 +13,7 @@ Ein Produktionsbuild besteht aus statischem HTML, CSS und JavaScript. Er kann lo
 - Basiskennzahlen-Berechnungen implementiert
 - Bibliotheksunabhängiges Kalendermodell und ICS-Normalisierung implementiert
 - Auswahl und Validierung des Analysezeitraums implementiert
-- Dateiauswahl und Verdrahtung des Imports in der Oberfläche noch nicht implementiert
+- Dateiauswahl und Verdrahtung des Imports mit der Analyse implementiert
 - Weitergehende Auffälligkeiten und Empfehlungen geplant
 
 ## Technologien und Verantwortlichkeiten
@@ -29,7 +29,7 @@ Ein Produktionsbuild besteht aus statischem HTML, CSS und JavaScript. Er kann lo
 | Prettier              | Einheitliche Formatierung von Quellcode, Konfiguration und Dokumentation                     |
 | `Intl.DateTimeFormat` | IANA-Zeitzonenregeln und Umwandlung zwischen absoluten Zeitpunkten und lokalen Kalenderdaten |
 
-Der ICS-Parser ist eine projektspezifische TypeScript-Implementierung in `features/calendar/services/icsParser.ts`; es wird derzeit keine externe ICS-Parser-Bibliothek verwendet. Der Parser nimmt Text entgegen und greift weder auf Dateien noch auf das Netzwerk zu. Für die geplante Dateiauswahl kann die standardisierte Browser File API (`<input type="file">` und `File.text()`) verwendet werden. Diese Anbindung ist im aktuellen UI noch nicht umgesetzt und daher keine bereits verwendete Laufzeitkomponente.
+Der ICS-Parser ist eine projektspezifische TypeScript-Implementierung in `features/calendar/services/icsParser.ts`; es wird derzeit keine externe ICS-Parser-Bibliothek verwendet. Der Parser nimmt Text entgegen und greift weder auf Dateien noch auf das Netzwerk zu. Die Dateiauswahl verwendet die standardisierte Browser File API (`<input type="file">` und `File.text()`).
 
 ## Schichten
 
@@ -66,7 +66,7 @@ Zentrale Typendefinitionen:
 Feature-Module für die Anwendung:
 
 - **analysis** – Auswahl des Analysezeitraums, Aufruf der Kennzahlenberechnung und Ergebnisdarstellung
-- **calendar** – ICS-Parsing und Normalisierung implementiert; Dateiauswahl und Integration in die Oberfläche geplant
+- **calendar** – Dateiauswahl, Dateivalidierung, ICS-Parsing, Normalisierung und Übergabe an die Analyse
 - **insights** – Weitere Analysen und Empfehlungen (geplant)
 
 ### Anwendung und Darstellung
@@ -120,7 +120,7 @@ Alle Funktionen außerhalb der Importgrenze arbeiten ausschließlich mit `Calend
 ### Verantwortlichkeiten und Datenfluss
 
 ```text
-Nutzende wählen eine lokale ICS-Datei aus (UI-Anbindung geplant)
+Nutzende wählen eine lokale ICS-Datei aus
   → Browser liest die Datei als Text (File API)
   → `parseIcs` zerlegt die externe ICS-Syntax
   → Parsergrenze normalisiert Rohtermine zu `CalendarEvent[]`
@@ -132,7 +132,7 @@ Nutzende wählen eine lokale ICS-Datei aus (UI-Anbindung geplant)
 
 Das Einlesen einer lokalen Datei ist von der Formatverarbeitung getrennt. `parseIcs` erhält nur den bereits gelesenen Text. Parserinterne Properties und Parameter bleiben innerhalb von `icsParser.ts`. Fehlerhafte Einträge werden ausgeschlossen und als strukturierte `CalendarImportIssue` gemeldet. Analyseservices und React-Komponenten kennen keine ICS-Rohstrukturen.
 
-Die Dateiauswahl und das Einlesen sind noch nicht mit der Oberfläche verbunden. Parser, Normalisierung, Zeitraumlogik und Basisanalyse sind bereits implementiert und getestet. Nach der künftigen UI-Anbindung verbleiben Dateiinhalt, normalisierte Termine, Importhinweise und Analyseergebnisse im Arbeitsspeicher des Browsers; kein Schritt dieses Datenflusses benötigt eine Serverübertragung.
+Dateiauswahl, Parser, Normalisierung, Zeitraumlogik und Basisanalyse sind implementiert und getestet. Dateiinhalt, normalisierte Termine, Importhinweise und Analyseergebnisse verbleiben im Arbeitsspeicher des Browsers; kein Schritt dieses Datenflusses benötigt eine Serverübertragung. Ein erneuter Import ersetzt die zuvor importierten Termine, ohne den gewählten Analysezeitraum zurückzusetzen.
 
 Für das Parsing wird keine zusätzliche Laufzeitabhängigkeit verwendet. Wiederholungsregeln werden derzeit nicht expandiert; bereits als einzelne `VEVENT`-Blöcke vorhandene Instanzen werden jeweils normalisiert.
 
