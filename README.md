@@ -22,12 +22,15 @@ Die folgenden Befehle stehen für lokale Prüfungen zur Verfügung:
 
 ## Aktueller Stand
 
-Diese Phase konzentriert sich auf die Projektgrundlage:
+Die technische Grundlage umfasst inzwischen:
 
-- Entfernung des Standard-Vite-Codes
-- Einführung einer feature-orientierten Projektstruktur
-- Erstellung der Dokumentationsbasis im Ordner docs
-- Aufbau einer minimalen Startseite ohne zusätzliche Funktionalität
+- eine feature-orientierte React- und TypeScript-Struktur,
+- ICS-Parsing und Normalisierung in ein internes Kalendermodell,
+- eine explizite Analysezeitzone und auswählbare Analysezeiträume,
+- getestete Basiskennzahlen sowie deren erste Darstellung und
+- automatisierte Format-, Lint-, Test- und Build-Prüfungen.
+
+Die Dateiauswahl ist noch nicht mit der Oberfläche verbunden. Weitergehende Auffälligkeiten, Empfehlungen und Visualisierungen sind geplant.
 
 ## Projektstruktur
 
