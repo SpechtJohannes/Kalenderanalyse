@@ -5,6 +5,8 @@ import type {
   FreeTimeBlock,
   WorkingHoursConfig,
 } from '../types/calendar'
+import type { AnalysisDateRange } from '../types/analysis'
+import { filterEventsByDateRange } from './analysisPeriod'
 import {
   addCalendarDays,
   dateAtMinutes,
@@ -239,6 +241,29 @@ export function calculateBaseMetrics(
       workingHoursConfig,
     ),
     eventsByDay: calculateEventsByDay(relevantEvents, startDate, endDate),
+  }
+}
+
+export function calculateBaseMetricsForRange(
+  events: CalendarEvent[],
+  range: AnalysisDateRange,
+  workingHoursConfig: WorkingHoursConfig = DEFAULT_WORKING_HOURS,
+): BaseMetrics {
+  const relevantEvents = filterEventsByDateRange(events, range)
+  const rangeStart = getDayBoundaries(range.startDateKey).startTime
+  const rangeEndDay = getDayBoundaries(range.endDateKey).startTime
+
+  return {
+    eventCount: calculateEventCount(relevantEvents),
+    totalMeetingMinutes: calculateTotalMeetingMinutes(relevantEvents),
+    averageMeetingDuration: calculateAverageMeetingDuration(relevantEvents),
+    freeTimeBlocks: calculateFreeTimeBlocks(
+      relevantEvents,
+      rangeStart,
+      rangeEndDay,
+      workingHoursConfig,
+    ),
+    eventsByDay: calculateEventsByDay(relevantEvents, rangeStart, rangeEndDay),
   }
 }
 

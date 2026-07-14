@@ -7,6 +7,7 @@
   --color-border: #e5e7eb;
   --color-text: #111827;
   --color-text-muted: #4b5563;
+  --color-error: #b91c1c;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
@@ -34,6 +35,7 @@
     --color-border: #374151;
     --color-text: #f9fafb;
     --color-text-muted: #d1d5db;
+    --color-error: #fca5a5;
   }
 }
 

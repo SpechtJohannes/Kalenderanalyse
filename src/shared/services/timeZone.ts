@@ -64,13 +64,36 @@ export function getLocalDateKey(
 function parseDateKey(dateKey: string): [number, number, number] {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey)
   if (!match) throw new RangeError(`Ungültiger Kalendertag: ${dateKey}`)
-  return [Number(match[1]), Number(match[2]), Number(match[3])]
+  const result: [number, number, number] = [Number(match[1]), Number(match[2]), Number(match[3])]
+  const validationDate = new Date(Date.UTC(result[0], result[1] - 1, result[2], 12))
+  if (
+    validationDate.getUTCFullYear() !== result[0] ||
+    validationDate.getUTCMonth() !== result[1] - 1 ||
+    validationDate.getUTCDate() !== result[2]
+  ) {
+    throw new RangeError(`Ungültiger Kalendertag: ${dateKey}`)
+  }
+  return result
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0, 12)).getUTCDate()
 }
 
 export function addCalendarDays(dateKey: string, days: number): string {
   const [year, month, day] = parseDateKey(dateKey)
   const shifted = new Date(Date.UTC(year, month - 1, day + days, 12))
   return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(shifted.getUTCDate()).padStart(2, '0')}`
+}
+
+export function addCalendarMonths(dateKey: string, months: number): string {
+  const [year, month, day] = parseDateKey(dateKey)
+  const targetMonthIndex = month - 1 + months
+  const targetYear = year + Math.floor(targetMonthIndex / 12)
+  const normalizedMonthIndex = ((targetMonthIndex % 12) + 12) % 12
+  const targetMonth = normalizedMonthIndex + 1
+  const targetDay = Math.min(day, daysInMonth(targetYear, targetMonth))
+  return `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`
 }
 
 export function zonedDateTimeToDate(

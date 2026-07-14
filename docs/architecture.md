@@ -116,3 +116,31 @@ Da vor diesem Issue keine ICS-Bibliothek oder bestehende Parserschicht vorhanden
 
 Die Funktionen in `shared/services/timeZone.ts` kapseln Datumsschlüssel, zonierte Tages- und Arbeitszeitgrenzen sowie Intervallüberschneidungen. Dadurch hängt die fachliche Zuordnung nicht von der Prozesszeitzone des Browsers, Entwicklungsrechners oder CI-Runners ab. Sommer- und Winterzeit werden über die IANA-Regeln von `Intl.DateTimeFormat` berücksichtigt.
 
+## Analysezeitraum
+
+### Modell und Presets
+
+`AnalysisDateRange` beschreibt den ausgewählten Zeitraum durch das Preset, inklusive Start- und Endtag als `YYYY-MM-DD` sowie absolute Grenzen. `startTime` ist der Beginn des Starttags; `endTime` ist die exklusive Grenze am Beginn des Folgetags. Beide Grenzen werden in `Europe/Berlin` erzeugt.
+
+Die zentralen Funktionen in `shared/services/analysisPeriod.ts` definieren folgende Presets, jeweils einschließlich des aktuellen Berliner Kalendertags:
+
+- **Kommende Woche:** aktueller Tag plus sechs weitere Kalendertage, insgesamt sieben Tage
+- **Kommende zwei Wochen:** aktueller Tag plus dreizehn weitere Kalendertage, insgesamt vierzehn Tage
+- **Kommender Monat:** bis zum korrespondierenden Tag des Folgemonats
+- **Kommende drei Monate:** bis zum korrespondierenden Tag drei Monate später
+- **Benutzerdefiniert:** frei gewählter Start- und Endtag einschließlich beider Tage
+
+Existiert der korrespondierende Tag im Zielmonat nicht, wird dessen letzter gültiger Tag verwendet. Ein benutzerdefiniertes Enddatum vor dem Startdatum ist ungültig.
+
+### Datenfluss und Grenzen
+
+```text
+Auswahl in AnalysisFeature
+  → AnalysisDateRange
+  → Termine auf [startTime, endTime) filtern und begrenzen
+  → calculateBaseMetricsForRange
+  → MetricsDisplay
+```
+
+Ein Termin wird berücksichtigt, wenn er den halb-offenen absoluten Zeitraum `[startTime, endTime)` überschneidet. Überragende Teile werden vor zeitbasierten Kennzahlen abgeschnitten. Ein Termin, der exakt an `startTime` endet oder exakt an `endTime` beginnt, liegt außerhalb. Die Auswahl wird im Zustand der Analysekomponente gehalten und bleibt deshalb erhalten, wenn sich die übergebenen Importdaten ändern; eine dauerhafte Speicherung über einen Neustart erfolgt nicht.
+
