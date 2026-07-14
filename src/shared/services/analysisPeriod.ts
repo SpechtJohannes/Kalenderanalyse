@@ -1,4 +1,8 @@
-import type { AnalysisDateRange, AnalysisDateRangeValidation, AnalysisPeriodPreset } from '../types/analysis'
+import type {
+  AnalysisDateRange,
+  AnalysisDateRangeValidation,
+  AnalysisPeriodPreset,
+} from '../types/analysis'
 import type { CalendarEvent } from '../types/calendar'
 import {
   addCalendarDays,

@@ -93,9 +93,7 @@ describe('AnalysisFeature', () => {
 
     rerender(
       <AnalysisFeature
-        events={[
-          event('new-import', '2024-01-18T09:00:00+01:00', '2024-01-18T10:00:00+01:00'),
-        ]}
+        events={[event('new-import', '2024-01-18T09:00:00+01:00', '2024-01-18T10:00:00+01:00')]}
       />,
     )
 

@@ -41,7 +41,9 @@ export function getZonedDateParts(
   timeZone: string = ANALYSIS_TIME_ZONE,
 ): ZonedDateParts {
   const values = Object.fromEntries(
-    getFormatter(timeZone).formatToParts(date).map((part) => [part.type, part.value]),
+    getFormatter(timeZone)
+      .formatToParts(date)
+      .map((part) => [part.type, part.value]),
   )
   return {
     year: Number(values.year),
@@ -53,10 +55,7 @@ export function getZonedDateParts(
   }
 }
 
-export function getLocalDateKey(
-  date: Date,
-  timeZone: string = ANALYSIS_TIME_ZONE,
-): string {
+export function getLocalDateKey(date: Date, timeZone: string = ANALYSIS_TIME_ZONE): string {
   const { year, month, day } = getZonedDateParts(date, timeZone)
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }

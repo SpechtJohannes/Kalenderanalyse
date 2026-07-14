@@ -86,15 +86,13 @@ describe('parseIcs', () => {
     const result = parseIcs(
       calendar(
         vevent('UID:all-day', 'DTSTART;VALUE=DATE:20240108', 'DTEND;VALUE=DATE:20240109'),
-        vevent(
-          'UID:overnight',
-          'DTSTART:20240108T230000Z',
-          'DTEND:20240109T010000Z',
-        ),
+        vevent('UID:overnight', 'DTSTART:20240108T230000Z', 'DTEND:20240109T010000Z'),
       ),
     )
 
-    expect(result.events.map(({ id, isAllDay, durationMinutes }) => ({ id, isAllDay, durationMinutes }))).toEqual([
+    expect(
+      result.events.map(({ id, isAllDay, durationMinutes }) => ({ id, isAllDay, durationMinutes })),
+    ).toEqual([
       { id: 'all-day', isAllDay: true, durationMinutes: 1440 },
       { id: 'overnight', isAllDay: false, durationMinutes: 120 },
     ])
@@ -118,13 +116,7 @@ describe('parseIcs', () => {
 
   it('interpretiert lokale DATE-TIME-Werte ausdrücklich in der Analysezeitzone', () => {
     const result = parseIcs(
-      calendar(
-        vevent(
-          'UID:floating',
-          'DTSTART:20240108T100000',
-          'DTEND:20240108T110000',
-        ),
-      ),
+      calendar(vevent('UID:floating', 'DTSTART:20240108T100000', 'DTEND:20240108T110000')),
     )
 
     expect(result.events[0].startTime.toISOString()).toBe('2024-01-08T09:00:00.000Z')
@@ -137,13 +129,7 @@ describe('parseIcs', () => {
     ['negativem Offset', '20240108T073000-0130', '2024-01-08T09:00:00.000Z'],
   ])('übernimmt DATE-TIME mit %s', (_name, start, expectedStart) => {
     const result = parseIcs(
-      calendar(
-        vevent(
-          'UID:offset',
-          `DTSTART:${start}`,
-          'DTEND:20240108T100000Z',
-        ),
-      ),
+      calendar(vevent('UID:offset', `DTSTART:${start}`, 'DTEND:20240108T100000Z')),
     )
 
     expect(result.issues).toEqual([])

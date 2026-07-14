@@ -1,30 +1,20 @@
 # Development Workflow
 
-<<<<<<< HEAD
+## Ziel
+
+Dieses Dokument beschreibt die Arbeitsweise, das Tooling und die Qualitätsstandards des Projekts.
+
 ## Qualitätsprüfungen vor einem Pull Request
 
-Vor jedem Pull Request müssen lokal die folgenden Prüfungen erfolgreich laufen:
+Vor jedem Pull Request müssen lokal folgende Prüfungen erfolgreich laufen:
 
+- `npm run format:check`
 - `npm run lint`
 - `npm run test:run`
 - `npm run build`
-- `npm run check`
 
-Die vollständige Qualitätsprüfung ist damit immer über denselben Befehl reproduzierbar.
+Mit `npm run check` lässt sich die vollständige Prüfkette reproduzierbar ausführen. `npm run format` formatiert alle von Prettier unterstützten Projektdateien.
 
 ## Automatische Prüfung über GitHub Actions
 
-Jeder Pull Request und jede Änderung auf dem Branch `main` löst den Workflow in [.github/workflows/ci.yml](.github/workflows/ci.yml) aus. Der Workflow führt dabei:
-
-1. Installation der Abhängigkeiten mit `npm ci`
-2. Lint-Prüfung
-3. Tests
-4. Produktionsbuild
-=======
-## Ziel
-Hier werden Arbeitsweise, Tooling und Qualitätsstandards festgehalten.
-
-## Status
-- Grundworkflow wird etabliert
-- Build, Lint und Dokumentation sind Teil der Routine
->>>>>>> origin/main
+Jeder Pull Request und jede Änderung auf `main` löst den Workflow in `.github/workflows/ci.yml` aus. Nach `npm ci` prüft der Workflow Formatierung und Lint-Regeln, führt die Tests aus und erstellt den Produktionsbuild.

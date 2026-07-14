@@ -13,8 +13,10 @@ Die folgenden Befehle stehen für lokale Prüfungen zur Verfügung:
 - `npm test` – startet den interaktiven Testmodus
 - `npm run test:run` – führt die Tests einmalig aus
 - `npm run lint` – prüft den Code mit ESLint
+- `npm run format` – formatiert alle unterstützten Projektdateien mit Prettier
+- `npm run format:check` – prüft die Formatierung ohne Dateien zu verändern
 - `npm run build` – erstellt den Produktionsbuild
-- `npm run check` – führt Tests, Lint-Prüfung und Build in einer Reihenfolge aus
+- `npm run check` – führt Formatprüfung, Lint, Tests und Build in einer Reihenfolge aus
 
 ## Aktueller Stand
 
@@ -30,7 +32,6 @@ Diese Phase konzentriert sich auf die Projektgrundlage:
 - src/features: feature-spezifische Bausteine
 - src/shared: wiederverwendbare UI- und Layoutkomponenten
 - docs: Architektur, Design, Workflow, Datenschutz und Produktvision
->>>>>>> origin/main
 
 ## Entwicklung
 
@@ -38,12 +39,9 @@ Diese Phase konzentriert sich auf die Projektgrundlage:
 npm install
 npm run dev
 ```
-<<<<<<< HEAD
-=======
 
 Für einen Produktionsbuild:
 
 ```bash
 npm run build
 ```
->>>>>>> origin/main
