@@ -45,7 +45,8 @@ type ParsedDate = {
 }
 
 const DATE_PATTERN = /^(\d{4})(\d{2})(\d{2})$/
-const DATE_TIME_PATTERN = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/
+const DATE_TIME_PATTERN =
+  /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z|[+-]\d{2}:?\d{2})?$/
 
 function unfoldLines(source: string): string[] {
   return source.replace(/\r\n?/g, '\n').split('\n').reduce<string[]>((lines, line) => {
@@ -148,7 +149,7 @@ function parseDate(property: RawProperty): ParsedDate | null {
 
   const match = DATE_TIME_PATTERN.exec(property.value)
   if (!match) return null
-  const [, year, month, day, hour, minute, second, utcMarker] = match
+  const [, year, month, day, hour, minute, second, zoneSuffix] = match
   const parts = [
     Number(year),
     Number(month) - 1,
@@ -178,9 +179,24 @@ function parseDate(property: RawProperty): ParsedDate | null {
       minute: parts[4],
       second: parts[5],
     }
-    const date = utcMarker
-      ? new Date(Date.UTC(...(parts as [number, number, number, number, number, number])))
-      : zonedDateTimeToDate(zonedParts, timeZone)
+    let date: Date
+    if (zoneSuffix === 'Z') {
+      date = new Date(Date.UTC(...(parts as [number, number, number, number, number, number])))
+    } else if (zoneSuffix) {
+      const offsetMatch = /^([+-])(\d{2}):?(\d{2})$/.exec(zoneSuffix)
+      if (!offsetMatch) return null
+      const offsetHours = Number(offsetMatch[2])
+      const offsetMinutes = Number(offsetMatch[3])
+      if (offsetHours > 23 || offsetMinutes > 59) return null
+      const direction = offsetMatch[1] === '+' ? 1 : -1
+      const totalOffsetMinutes = direction * (offsetHours * 60 + offsetMinutes)
+      date = new Date(
+        Date.UTC(...(parts as [number, number, number, number, number, number])) -
+          totalOffsetMinutes * 60_000,
+      )
+    } else {
+      date = zonedDateTimeToDate(zonedParts, timeZone)
+    }
     return Number.isFinite(date.getTime()) ? { date, isDateOnly: false } : null
   } catch {
     return null
@@ -206,6 +222,16 @@ function normalizePerson(property: RawProperty | null): CalendarPerson | null {
   const name = property.parameters.CN?.trim() || null
   const email = rawEmail && rawEmail.includes('@') ? rawEmail : null
   return name || email ? { name, email } : null
+}
+
+function deduplicatePeople(people: CalendarPerson[]): CalendarPerson[] {
+  const identities = new Set<string>()
+  return people.filter((person) => {
+    const identity = `${person.name?.trim().toLocaleLowerCase() ?? ''}|${person.email?.trim().toLocaleLowerCase() ?? ''}`
+    if (identities.has(identity)) return false
+    identities.add(identity)
+    return true
+  })
 }
 
 function stableFallbackId(rawEvent: RawCalendarEvent): string {
@@ -269,9 +295,11 @@ function normalizeCalendarEvent(
       isAllDay: start.isDateOnly,
       status: normalizeStatus(getFirst(rawEvent, 'STATUS')?.value),
       organizer: normalizePerson(getFirst(rawEvent, 'ORGANIZER')),
-      attendees: (rawEvent.properties.get('ATTENDEE') ?? [])
-        .map((attendee) => normalizePerson(attendee))
-        .filter((attendee): attendee is CalendarPerson => attendee !== null),
+      attendees: deduplicatePeople(
+        (rawEvent.properties.get('ATTENDEE') ?? [])
+          .map((attendee) => normalizePerson(attendee))
+          .filter((attendee): attendee is CalendarPerson => attendee !== null),
+      ),
     },
     issue: null,
   }
