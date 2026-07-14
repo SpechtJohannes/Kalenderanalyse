@@ -20,7 +20,19 @@ function event(
   endTime: Date,
   isAllDay = false,
 ): CalendarEvent {
-  return { id, title: `Termin ${id}`, startTime, endTime, isAllDay }
+  return {
+    id,
+    title: `Termin ${id}`,
+    description: null,
+    location: null,
+    startTime,
+    endTime,
+    durationMinutes: (endTime.getTime() - startTime.getTime()) / 60_000,
+    isAllDay,
+    status: 'confirmed',
+    organizer: null,
+    attendees: [],
+  }
 }
 
 function localDate(day: number, hour = 0, minute = 0): Date {

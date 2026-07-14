@@ -9,6 +9,7 @@ Die Anwendung basiert auf einer einfachen React- und Vite-Struktur. Für die ers
 - Basisarchitektur vorhanden
 - Test- und CI-Integration ist eingerichtet
 - Basiskennzahlen-Berechnungen implementiert
+- Bibliotheksunabhängiges Kalendermodell und ICS-Normalisierung implementiert
 
 ## Schichten
 
@@ -35,7 +36,7 @@ Geschäftslogik und Berechnungen:
 
 Zentrale Typendefinitionen:
 
-- **calendar.ts** – CalendarEvent, WorkingHoursConfig, BaseMetrics und verwandte Typen
+- **calendar.ts** – Zentrales, bibliotheksunabhängiges `CalendarEvent`-Modell sowie WorkingHoursConfig, BaseMetrics und verwandte Typen
 
 ### Features
 
@@ -82,4 +83,34 @@ Standardwerte (konfigurierbar):
 - **Termine außerhalb Arbeitszeit**: Beeinflussen freie Zeitblöcke nicht
 - **Negative, leere oder ungültige Dauern**: Werden vollständig aus den Kennzahlen ausgeschlossen
 - **Zeitzonen und Sommerzeit**: `Date`-Zeitpunkte werden als absolute Zeitpunkte ausgewertet; Tagesgrenzen und Arbeitszeiten richten sich nach der lokalen Browser-Zeitzone
+
+## Kalenderimport und Normalisierung
+
+### Internes Terminmodell
+
+Alle Funktionen außerhalb der Importgrenze arbeiten ausschließlich mit `CalendarEvent` aus `src/shared/types/calendar.ts`. Ein normalisierter Termin enthält eine stabile ID, Titel, Beschreibung, Ort, Start, Ende, Dauer in Minuten, Ganztagskennzeichnung, Status, Organisator und Teilnehmende. Optionale Text- und Personenwerte werden einheitlich mit `null` dargestellt; Teilnehmende sind immer ein Array. Das Modell exportiert keine Rohstrukturen oder Typen eines ICS-Parsers.
+
+### Verantwortlichkeiten und Datenfluss
+
+```text
+lokale ICS-Datei
+  → Einlesen als Text im Browser
+  → ICS-Syntax parsen (`icsParser`)
+  → Rohtermine zentral normalisieren
+  → `CalendarImportResult` mit `CalendarEvent[]` und Importhinweisen
+  → Analysen und Darstellung verwenden ausschließlich `CalendarEvent`
+```
+
+Das Einlesen einer lokalen Datei ist von der Formatverarbeitung getrennt. `parseIcs` erhält nur den bereits gelesenen Text. Parserinterne Properties und Parameter bleiben innerhalb von `icsParser.ts`. Fehlerhafte Einträge werden ausgeschlossen und als strukturierte `CalendarImportIssue` gemeldet.
+
+Da vor diesem Issue keine ICS-Bibliothek oder bestehende Parserschicht vorhanden war, wird keine zusätzliche Laufzeitabhängigkeit eingeführt. Wiederholungsregeln werden derzeit nicht expandiert; bereits als einzelne `VEVENT`-Blöcke vorhandene Instanzen werden jeweils normalisiert.
+
+### Datum, Uhrzeit und Zeitzonen
+
+- UTC-Werte mit `Z` werden direkt als absolute `Date`-Zeitpunkte gespeichert.
+- Werte mit `TZID` werden über die IANA-Zeitzonenunterstützung von `Intl.DateTimeFormat` in absolute Zeitpunkte überführt. Die jeweilige Sommerzeitregel bleibt dadurch erhalten.
+- „Floating“-Zeitpunkte ohne UTC-Kennung oder `TZID` werden in der lokalen Browser-Zeitzone interpretiert.
+- Ganztägige `VALUE=DATE`-Werte werden an lokalen Tagesgrenzen erzeugt; das in ICS exklusive Enddatum bleibt erhalten.
+- Ungültige Datumswerte, fehlende Grenzen und nicht positive Dauern werden verworfen und gemeldet.
+- Doppelte UIDs erhalten in Eingabereihenfolge stabile Suffixe wie `#2`, damit keine Termine überschrieben werden.
 
