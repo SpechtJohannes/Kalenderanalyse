@@ -8,11 +8,22 @@
 export interface CalendarEvent {
   id: string
   title: string
-  description?: string
+  description: string | null
   startTime: Date
   endTime: Date
+  durationMinutes: number
   isAllDay: boolean
-  location?: string
+  location: string | null
+  status: CalendarEventStatus
+  organizer: CalendarPerson | null
+  attendees: CalendarPerson[]
+}
+
+export type CalendarEventStatus = 'confirmed' | 'tentative' | 'cancelled' | 'unknown'
+
+export interface CalendarPerson {
+  name: string | null
+  email: string | null
 }
 
 /**
