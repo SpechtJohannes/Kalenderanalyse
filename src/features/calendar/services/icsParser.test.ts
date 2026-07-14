@@ -49,6 +49,24 @@ describe('parseIcs', () => {
     ])
   })
 
+  it('übernimmt gefaltete und typisch maskierte Beschreibungen vollständig', () => {
+    const result = parseIcs(
+      calendar(
+        vevent(
+          'UID:description',
+          'DTSTART:20240108T090000Z',
+          'DTEND:20240108T100000Z',
+          'DESCRIPTION:Erste Zeile\\nZweite Zeile mit Komma\\, Semikolon\\;',
+          ' und Rückwärtsschrägstrich\\\\.',
+        ),
+      ),
+    )
+
+    expect(result.events[0].description).toBe(
+      'Erste Zeile\nZweite Zeile mit Komma, Semikolon;und Rückwärtsschrägstrich\\.',
+    )
+  })
+
   it('setzt fehlende Textfelder und Personen konsistent auf Fallback beziehungsweise null', () => {
     const result = parseIcs(
       calendar(vevent('UID:minimal', 'DTSTART:20240108T090000Z', 'DTEND:20240108T100000Z')),
@@ -98,6 +116,41 @@ describe('parseIcs', () => {
     expect(result.events[0].durationMinutes).toBe(360)
   })
 
+  it('interpretiert lokale DATE-TIME-Werte ausdrücklich in der Analysezeitzone', () => {
+    const result = parseIcs(
+      calendar(
+        vevent(
+          'UID:floating',
+          'DTSTART:20240108T100000',
+          'DTEND:20240108T110000',
+        ),
+      ),
+    )
+
+    expect(result.events[0].startTime.toISOString()).toBe('2024-01-08T09:00:00.000Z')
+    expect(result.events[0].endTime.toISOString()).toBe('2024-01-08T10:00:00.000Z')
+  })
+
+  it.each([
+    ['kompaktem positiven Offset', '20240108T103000+0130', '2024-01-08T09:00:00.000Z'],
+    ['positivem Offset mit Doppelpunkt', '20240108T103000+01:30', '2024-01-08T09:00:00.000Z'],
+    ['negativem Offset', '20240108T073000-0130', '2024-01-08T09:00:00.000Z'],
+  ])('übernimmt DATE-TIME mit %s', (_name, start, expectedStart) => {
+    const result = parseIcs(
+      calendar(
+        vevent(
+          'UID:offset',
+          `DTSTART:${start}`,
+          'DTEND:20240108T100000Z',
+        ),
+      ),
+    )
+
+    expect(result.issues).toEqual([])
+    expect(result.events[0].startTime.toISOString()).toBe(expectedStart)
+    expect(result.events[0].durationMinutes).toBe(60)
+  })
+
   it('berechnet einen Termin über den Sommerzeitwechsel als absolute Dauer', () => {
     const result = parseIcs(
       calendar(
@@ -131,6 +184,28 @@ describe('parseIcs', () => {
       organizer: { name: null, email: 'orga@example.com' },
       attendees: [{ name: 'Nur Name', email: null }],
     })
+  })
+
+  it('übernimmt Organisatoren ohne E-Mail und dedupliziert identische Teilnehmende', () => {
+    const result = parseIcs(
+      calendar(
+        vevent(
+          'UID:people',
+          'DTSTART:20240108T090000Z',
+          'DTEND:20240108T100000Z',
+          'ORGANIZER;CN=Organisation:urn:uuid:orga',
+          'ATTENDEE;CN=Max:mailto:max@example.com',
+          'ATTENDEE;CN=Max:mailto:max@example.com',
+          'ATTENDEE:mailto:lisa@example.com',
+        ),
+      ),
+    )
+
+    expect(result.events[0].organizer).toEqual({ name: 'Organisation', email: null })
+    expect(result.events[0].attendees).toEqual([
+      { name: 'Max', email: 'max@example.com' },
+      { name: null, email: 'lisa@example.com' },
+    ])
   })
 
   it.each([
@@ -173,6 +248,35 @@ describe('parseIcs', () => {
     expect(result.events.map((event) => event.id)).toEqual(['duplicate', 'duplicate#2'])
   })
 
+  it('behält gültige Termine bei, wenn andere Termine derselben Datei ungültig sind', () => {
+    const result = parseIcs(
+      calendar(
+        vevent(
+          'UID:valid',
+          'DTSTART:20240108T090000Z',
+          'DTEND:20240108T100000Z',
+          'X-UNKNOWN:wird ignoriert',
+        ),
+        vevent('UID:invalid', 'DTSTART:kein-datum', 'DTEND:20240108T100000Z'),
+      ),
+    )
+
+    expect(result.events.map((event) => event.id)).toEqual(['valid'])
+    expect(result.issues).toMatchObject([{ code: 'invalid-start', uid: 'invalid' }])
+  })
+
+  it('liest Termine aus mehreren vollständigen Kalenderblöcken', () => {
+    const result = parseIcs(
+      [
+        calendar(vevent('UID:first', 'DTSTART:20240108T090000Z', 'DTEND:20240108T100000Z')),
+        calendar(vevent('UID:second', 'DTSTART:20240109T090000Z', 'DTEND:20240109T100000Z')),
+      ].join('\r\n'),
+    )
+
+    expect(result.events.map((event) => event.id)).toEqual(['first', 'second'])
+    expect(result.issues).toEqual([])
+  })
+
   it('liefert ausschließlich interne Modellfelder und keine Parserstrukturen', () => {
     const result = parseIcs(
       calendar(vevent('UID:model', 'DTSTART:20240108T090000Z', 'DTEND:20240108T100000Z')),
@@ -200,5 +304,16 @@ describe('parseIcs', () => {
       events: [],
       issues: [{ code: 'invalid-calendar', sourceIndex: null }],
     })
+  })
+
+  it('meldet eine leere Datei kontrolliert', () => {
+    expect(parseIcs('')).toMatchObject({
+      events: [],
+      issues: [{ code: 'invalid-calendar', sourceIndex: null }],
+    })
+  })
+
+  it('akzeptiert einen gültigen Kalender ohne Termine', () => {
+    expect(parseIcs(calendar())).toEqual({ events: [], issues: [] })
   })
 })
