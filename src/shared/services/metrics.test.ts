@@ -15,12 +15,7 @@ import { getLocalDateKey, getZonedDateParts, zonedDateTimeToDate } from './timeZ
 const monday = localDate(8)
 const friday = localDate(12)
 
-function event(
-  id: string,
-  startTime: Date,
-  endTime: Date,
-  isAllDay = false,
-): CalendarEvent {
+function event(id: string, startTime: Date, endTime: Date, isAllDay = false): CalendarEvent {
   return {
     id,
     title: `Termin ${id}`,
@@ -104,10 +99,9 @@ describe('Basiskennzahlen', () => {
         event('3', localDate(8, 11), localDate(8, 12)),
       ]
 
-      expect(calculateFreeTimeBlocks(events, monday, monday).map((block) => block.duration)).toEqual([
-        60,
-        360,
-      ])
+      expect(
+        calculateFreeTimeBlocks(events, monday, monday).map((block) => block.duration),
+      ).toEqual([60, 360])
     })
 
     it('begrenzt teilweise außerhalb der Arbeitszeit liegende Termine', () => {
@@ -244,36 +238,67 @@ describe('Basiskennzahlen', () => {
         name: 'Winterzeit',
         start: '2024-01-08T09:00:00+01:00',
         end: '2024-01-08T10:00:00+01:00',
-        analysisDay: zonedDateTimeToDate({ year: 2024, month: 1, day: 8, hour: 0, minute: 0, second: 0 }),
+        analysisDay: zonedDateTimeToDate({
+          year: 2024,
+          month: 1,
+          day: 8,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        }),
       },
       {
         name: 'Sommerzeit',
         start: '2024-07-08T09:00:00+02:00',
         end: '2024-07-08T10:00:00+02:00',
-        analysisDay: zonedDateTimeToDate({ year: 2024, month: 7, day: 8, hour: 0, minute: 0, second: 0 }),
+        analysisDay: zonedDateTimeToDate({
+          year: 2024,
+          month: 7,
+          day: 8,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        }),
       },
       {
         name: 'Umstellung auf Sommerzeit',
         start: '2024-03-31T01:30:00+01:00',
         end: '2024-03-31T03:30:00+02:00',
-        analysisDay: zonedDateTimeToDate({ year: 2024, month: 3, day: 31, hour: 0, minute: 0, second: 0 }),
+        analysisDay: zonedDateTimeToDate({
+          year: 2024,
+          month: 3,
+          day: 31,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        }),
       },
       {
         name: 'Umstellung auf Winterzeit',
         start: '2024-10-27T02:30:00+02:00',
         end: '2024-10-27T02:30:00+01:00',
-        analysisDay: zonedDateTimeToDate({ year: 2024, month: 10, day: 27, hour: 0, minute: 0, second: 0 }),
+        analysisDay: zonedDateTimeToDate({
+          year: 2024,
+          month: 10,
+          day: 27,
+          hour: 0,
+          minute: 0,
+          second: 0,
+        }),
       },
-    ])('berechnet Tagesminuten während $name unabhängig von der Systemzeitzone', ({ start, end, analysisDay }) => {
-      const stats = calculateEventsByDay(
-        [event('zoned', new Date(start), new Date(end))],
-        analysisDay,
-        analysisDay,
-      )
+    ])(
+      'berechnet Tagesminuten während $name unabhängig von der Systemzeitzone',
+      ({ start, end, analysisDay }) => {
+        const stats = calculateEventsByDay(
+          [event('zoned', new Date(start), new Date(end))],
+          analysisDay,
+          analysisDay,
+        )
 
-      expect(stats[0].eventCount).toBe(1)
-      expect(stats[0].totalDuration).toBe(60)
-    })
+        expect(stats[0].eventCount).toBe(1)
+        expect(stats[0].totalDuration).toBe(60)
+      },
+    )
 
     it('filtert auf den Analysezeitraum und begrenzt über dessen Rand laufende Termine', () => {
       const events = [

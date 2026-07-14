@@ -48,9 +48,7 @@ export function AnalysisFeature({ events = [] }: AnalysisFeatureProps) {
 
       <div className="analysis-period">
         <div className="analysis-period__selection">
-          <label htmlFor="analysis-period-preset">
-            Analysezeitraum
-          </label>
+          <label htmlFor="analysis-period-preset">Analysezeitraum</label>
           <select
             id="analysis-period-preset"
             value={preset}

@@ -45,18 +45,20 @@ type ParsedDate = {
 }
 
 const DATE_PATTERN = /^(\d{4})(\d{2})(\d{2})$/
-const DATE_TIME_PATTERN =
-  /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z|[+-]\d{2}:?\d{2})?$/
+const DATE_TIME_PATTERN = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z|[+-]\d{2}:?\d{2})?$/
 
 function unfoldLines(source: string): string[] {
-  return source.replace(/\r\n?/g, '\n').split('\n').reduce<string[]>((lines, line) => {
-    if (/^[ \t]/.test(line) && lines.length > 0) {
-      lines[lines.length - 1] += line.slice(1)
-    } else {
-      lines.push(line)
-    }
-    return lines
-  }, [])
+  return source
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .reduce<string[]>((lines, line) => {
+      if (/^[ \t]/.test(line) && lines.length > 0) {
+        lines[lines.length - 1] += line.slice(1)
+      } else {
+        lines.push(line)
+      }
+      return lines
+    }, [])
 }
 
 function splitAtUnquoted(value: string, separator: string): [string, string] | null {
@@ -158,7 +160,9 @@ function parseDate(property: RawProperty): ParsedDate | null {
     Number(minute),
     Number(second),
   ]
-  const validationDate = new Date(Date.UTC(...(parts as [number, number, number, number, number, number])))
+  const validationDate = new Date(
+    Date.UTC(...(parts as [number, number, number, number, number, number])),
+  )
   if (
     validationDate.getUTCFullYear() !== parts[0] ||
     validationDate.getUTCMonth() !== parts[1] ||
@@ -259,9 +263,10 @@ function issue(
   }
 }
 
-function normalizeCalendarEvent(
-  rawEvent: RawCalendarEvent,
-): { event: CalendarEvent | null; issue: CalendarImportIssue | null } {
+function normalizeCalendarEvent(rawEvent: RawCalendarEvent): {
+  event: CalendarEvent | null
+  issue: CalendarImportIssue | null
+} {
   const rawStart = getFirst(rawEvent, 'DTSTART')
   const rawEnd = getFirst(rawEvent, 'DTEND')
   if (!rawStart) return { event: null, issue: issue(rawEvent, 'missing-start', 'Startzeit fehlt.') }
@@ -269,7 +274,8 @@ function normalizeCalendarEvent(
 
   const start = parseDate(rawStart)
   const end = parseDate(rawEnd)
-  if (!start) return { event: null, issue: issue(rawEvent, 'invalid-start', 'Startzeit ist ungültig.') }
+  if (!start)
+    return { event: null, issue: issue(rawEvent, 'invalid-start', 'Startzeit ist ungültig.') }
   if (!end) return { event: null, issue: issue(rawEvent, 'invalid-end', 'Endzeit ist ungültig.') }
   if (end.date <= start.date) {
     return {
@@ -331,9 +337,7 @@ export function parseIcs(source: string): CalendarImportResult {
 
   const normalized = parseRawEvents(source).map(normalizeCalendarEvent)
   return {
-    events: ensureUniqueIds(
-      normalized.flatMap((result) => (result.event ? [result.event] : [])),
-    ),
+    events: ensureUniqueIds(normalized.flatMap((result) => (result.event ? [result.event] : []))),
     issues: normalized.flatMap((result) => (result.issue ? [result.issue] : [])),
   }
 }

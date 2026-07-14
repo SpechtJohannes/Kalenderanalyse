@@ -9,5 +9,4 @@ export type AnalysisDateRange = {
 }
 
 export type AnalysisDateRangeValidation =
-  | { range: AnalysisDateRange; error: null }
-  | { range: null; error: string }
+  { range: AnalysisDateRange; error: null } | { range: null; error: string }

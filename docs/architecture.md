@@ -143,4 +143,3 @@ Auswahl in AnalysisFeature
 ```
 
 Ein Termin wird berücksichtigt, wenn er den halb-offenen absoluten Zeitraum `[startTime, endTime)` überschneidet. Überragende Teile werden vor zeitbasierten Kennzahlen abgeschnitten. Ein Termin, der exakt an `startTime` endet oder exakt an `endTime` beginnt, liegt außerhalb. Die Auswahl wird im Zustand der Analysekomponente gehalten und bleibt deshalb erhalten, wenn sich die übergebenen Importdaten ändern; eine dauerhafte Speicherung über einen Neustart erfolgt nicht.
-

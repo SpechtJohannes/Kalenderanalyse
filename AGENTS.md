@@ -6,17 +6,17 @@ Diese Datei beschreibt die verbindlichen Entwicklungsrichtlinien für dieses Pro
 
 ## Produkt
 
-* Das Produkt ist immer eine lokal ausführbare HTML Anwendung.
-* Es gibt keine Serverkomponente.
-* Alle Kalenderdaten werden ausschließlich lokal im Browser verarbeitet.
-* Es gibt keine Cloudpflicht.
-* Datenschutz besitzt hohe Priorität.
+- Das Produkt ist immer eine lokal ausführbare HTML Anwendung.
+- Es gibt keine Serverkomponente.
+- Alle Kalenderdaten werden ausschließlich lokal im Browser verarbeitet.
+- Es gibt keine Cloudpflicht.
+- Datenschutz besitzt hohe Priorität.
 
 ## Architektur
 
-* React
-* TypeScript
-* Vite
+- React
+- TypeScript
+- Vite
 
 Die Projektstruktur ist featureorientiert.
 
@@ -30,25 +30,25 @@ Alle Komponenten unterstützen Hell und Dunkelmodus.
 
 Bei Änderungen muss geprüft werden, ob folgende Dokumente aktualisiert werden müssen:
 
-* docs/product-vision.md
-* docs/architecture.md
-* docs/design.md
-* docs/privacy.md
-* docs/scoring-model.md
+- docs/product-vision.md
+- docs/architecture.md
+- docs/design.md
+- docs/privacy.md
+- docs/scoring-model.md
 
 ## Qualität
 
-* TypeScript ohne Fehler
-* Tests ergänzen oder aktualisieren
-* Bestehende Tests dürfen nicht fehlschlagen
-* Keine ungenutzten Komponenten oder Dateien
+- TypeScript ohne Fehler
+- Tests ergänzen oder aktualisieren
+- Bestehende Tests dürfen nicht fehlschlagen
+- Keine ungenutzten Komponenten oder Dateien
 
 ## Workflow
 
-* Ein Branch pro Issue
-* Ein Pull Request pro Issue
-* Kleine nachvollziehbare Commits
-* Änderungen an der Architektur dokumentieren
+- Ein Branch pro Issue
+- Ein Pull Request pro Issue
+- Kleine nachvollziehbare Commits
+- Änderungen an der Architektur dokumentieren
 
 ## Design
 

@@ -7,12 +7,7 @@ import type {
 } from '../types/calendar'
 import type { AnalysisDateRange } from '../types/analysis'
 import { filterEventsByDateRange } from './analysisPeriod'
-import {
-  addCalendarDays,
-  dateAtMinutes,
-  getDayBoundaries,
-  getLocalDateKey,
-} from './timeZone'
+import { addCalendarDays, dateAtMinutes, getDayBoundaries, getLocalDateKey } from './timeZone'
 
 export { ANALYSIS_TIME_ZONE } from './timeZone'
 
@@ -234,12 +229,7 @@ export function calculateBaseMetrics(
     eventCount: calculateEventCount(relevantEvents),
     totalMeetingMinutes: calculateTotalMeetingMinutes(relevantEvents),
     averageMeetingDuration: calculateAverageMeetingDuration(relevantEvents),
-    freeTimeBlocks: calculateFreeTimeBlocks(
-      relevantEvents,
-      startDate,
-      endDate,
-      workingHoursConfig,
-    ),
+    freeTimeBlocks: calculateFreeTimeBlocks(relevantEvents, startDate, endDate, workingHoursConfig),
     eventsByDay: calculateEventsByDay(relevantEvents, startDate, endDate),
   }
 }
