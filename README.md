@@ -30,7 +30,7 @@ Die technische Grundlage umfasst inzwischen:
 - getestete Basiskennzahlen sowie deren erste Darstellung und
 - automatisierte Format-, Lint-, Test- und Build-Prüfungen.
 
-Die Dateiauswahl ist noch nicht mit der Oberfläche verbunden. Weitergehende Auffälligkeiten, Empfehlungen und Visualisierungen sind geplant.
+Eine lokale ICS-Datei kann über die Oberfläche ausgewählt und importiert werden. Sie wird vollständig im Browser verarbeitet, nicht an einen Server übertragen und nicht dauerhaft gespeichert. Weitergehende Auffälligkeiten, Empfehlungen und Visualisierungen sind geplant.
 
 ## Projektstruktur
 
