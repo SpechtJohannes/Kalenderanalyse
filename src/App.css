@@ -1,14 +1,4 @@
 .app-shell {
-<<<<<<< HEAD
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  text-align: center;
-  gap: 0.75rem;
-=======
   max-width: 1120px;
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
@@ -81,5 +71,4 @@
 .app-shell__notes p {
   color: #4b5563;
   max-width: 720px;
->>>>>>> origin/main
 }

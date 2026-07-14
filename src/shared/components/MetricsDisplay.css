@@ -1,0 +1,101 @@
+/* Metrics Display Styles */
+
+.metrics-display {
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.metrics-summary {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.metric-card__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-card__value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.events-by-day {
+  margin-top: 1.5rem;
+}
+
+.events-by-day h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.events-by-day__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.events-by-day__table thead {
+  background-color: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.events-by-day__table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.events-by-day__table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+.events-by-day__table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.analysis-feature {
+  width: 100%;
+}
+
+.analysis-feature__content {
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .metrics-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .events-by-day__table {
+    font-size: 0.8rem;
+  }
+
+  .events-by-day__table th,
+  .events-by-day__table td {
+    padding: 0.5rem;
+  }
+}

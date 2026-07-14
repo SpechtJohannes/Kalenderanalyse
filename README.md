@@ -1,7 +1,10 @@
 # Kalenderanalyse
 
-<<<<<<< HEAD
-Ein lokales Kalender Analyse Tool, das aus einer ICS Datei verständlich zeigt, wie stark der eigene Kalender durch Meetings, Kontextwechsel und problematische Terminanordnungen belastet ist. Das Tool macht auffällige Termine sichtbar und gibt konkrete Hinweise, wo Verbesserungen möglich sind.
+Ein lokales Kalender Analyse Tool, das aus einer ICS Datei verständlich zeigt, wie stark der eigene Kalender durch Meetings, Kontextwechsel und problematische Terminanordnungen belastet ist.
+
+## Produktvision
+
+Die Anwendung soll helfen, Zeit und Energie sinnvoller zu nutzen, indem sie wichtige Zusammenhänge aus dem Kalender sichtbar macht. Der Fokus liegt auf klaren Einblicken, Datenschutz und einer schrittweisen Erweiterung der Funktionen.
 
 ## Qualitätsprüfungen
 
@@ -12,12 +15,6 @@ Die folgenden Befehle stehen für lokale Prüfungen zur Verfügung:
 - `npm run lint` – prüft den Code mit ESLint
 - `npm run build` – erstellt den Produktionsbuild
 - `npm run check` – führt Tests, Lint-Prüfung und Build in einer Reihenfolge aus
-=======
-Kalenderanalyse ist ein Produkt mit dem Ziel, Kalenderdaten verständlich zu machen, Muster sichtbar zu machen und Nutzerinnen und Nutzern bessere Entscheidungen zu ermöglichen.
-
-## Produktvision
-
-Die Anwendung soll helfen, Zeit und Energie sinnvoller zu nutzen, indem sie wichtige Zusammenhänge aus dem Kalender sichtbar macht. Der Fokus liegt auf klaren Einblicken, Datenschutz und einer schrittweisen Erweiterung der Funktionen.
 
 ## Aktueller Stand
 
