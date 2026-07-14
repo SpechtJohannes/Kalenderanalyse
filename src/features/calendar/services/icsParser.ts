@@ -3,6 +3,11 @@ import type {
   CalendarEventStatus,
   CalendarPerson,
 } from '../../../shared/types/calendar'
+import {
+  ANALYSIS_TIME_ZONE,
+  zonedDateTimeToDate,
+  type ZonedDateParts,
+} from '../../../shared/services/timeZone'
 
 type RawProperty = {
   value: string
@@ -116,55 +121,29 @@ function getFirst(rawEvent: RawCalendarEvent, name: string): RawProperty | null 
   return rawEvent.properties.get(name)?.[0] ?? null
 }
 
-function zonedDate(parts: number[], timeZone: string): Date | null {
-  try {
-    const desiredUtc = Date.UTC(...(parts as [number, number, number, number, number, number]))
-    let timestamp = desiredUtc
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hourCycle: 'h23',
-    })
-
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const formatted = Object.fromEntries(
-        formatter.formatToParts(new Date(timestamp)).map((part) => [part.type, part.value]),
-      )
-      const representedUtc = Date.UTC(
-        Number(formatted.year),
-        Number(formatted.month) - 1,
-        Number(formatted.day),
-        Number(formatted.hour),
-        Number(formatted.minute),
-        Number(formatted.second),
-      )
-      timestamp += desiredUtc - representedUtc
-    }
-
-    return new Date(timestamp)
-  } catch {
-    return null
-  }
-}
-
 function parseDate(property: RawProperty): ParsedDate | null {
   const dateMatch = DATE_PATTERN.exec(property.value)
   if (dateMatch) {
     const [, year, month, day] = dateMatch
-    const date = new Date(Number(year), Number(month) - 1, Number(day))
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
     if (
-      date.getFullYear() !== Number(year) ||
-      date.getMonth() !== Number(month) - 1 ||
-      date.getDate() !== Number(day)
+      date.getUTCFullYear() !== Number(year) ||
+      date.getUTCMonth() !== Number(month) - 1 ||
+      date.getUTCDate() !== Number(day)
     ) {
       return null
     }
-    return { date, isDateOnly: true }
+    return {
+      date: zonedDateTimeToDate({
+        year: Number(year),
+        month: Number(month),
+        day: Number(day),
+        hour: 0,
+        minute: 0,
+        second: 0,
+      }),
+      isDateOnly: true,
+    }
   }
 
   const match = DATE_TIME_PATTERN.exec(property.value)
@@ -189,14 +168,23 @@ function parseDate(property: RawProperty): ParsedDate | null {
   ) {
     return null
   }
-  const timeZone = property.parameters.TZID
-  const date = utcMarker
-    ? new Date(Date.UTC(...(parts as [number, number, number, number, number, number])))
-    : timeZone
-      ? zonedDate(parts, timeZone)
-      : new Date(...(parts as [number, number, number, number, number, number]))
-
-  return date && Number.isFinite(date.getTime()) ? { date, isDateOnly: false } : null
+  try {
+    const timeZone = property.parameters.TZID ?? ANALYSIS_TIME_ZONE
+    const zonedParts: ZonedDateParts = {
+      year: parts[0],
+      month: parts[1] + 1,
+      day: parts[2],
+      hour: parts[3],
+      minute: parts[4],
+      second: parts[5],
+    }
+    const date = utcMarker
+      ? new Date(Date.UTC(...(parts as [number, number, number, number, number, number])))
+      : zonedDateTimeToDate(zonedParts, timeZone)
+    return Number.isFinite(date.getTime()) ? { date, isDateOnly: false } : null
+  } catch {
+    return null
+  }
 }
 
 function normalizeStatus(value: string | undefined): CalendarEventStatus {

@@ -10,9 +10,10 @@ import {
   formatMinutesToDecimalHours,
   formatMinutesToHours,
 } from './metrics'
+import { getLocalDateKey, getZonedDateParts, zonedDateTimeToDate } from './timeZone'
 
-const monday = new Date(2024, 0, 8)
-const friday = new Date(2024, 0, 12)
+const monday = localDate(8)
+const friday = localDate(12)
 
 function event(
   id: string,
@@ -36,7 +37,7 @@ function event(
 }
 
 function localDate(day: number, hour = 0, minute = 0): Date {
-  return new Date(2024, 0, day, hour, minute)
+  return zonedDateTimeToDate({ year: 2024, month: 1, day, hour, minute, second: 0 })
 }
 
 describe('Basiskennzahlen', () => {
@@ -117,8 +118,8 @@ describe('Basiskennzahlen', () => {
 
       const blocks = calculateFreeTimeBlocks(events, monday, monday)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].startTime.getHours()).toBe(9)
-      expect(blocks[0].endTime.getHours()).toBe(17)
+      expect(getZonedDateParts(blocks[0].startTime).hour).toBe(9)
+      expect(getZonedDateParts(blocks[0].endTime).hour).toBe(17)
       expect(blocks[0].duration).toBe(480)
     })
 
@@ -130,8 +131,8 @@ describe('Basiskennzahlen', () => {
 
       const blocks = calculateFreeTimeBlocks(events, monday, monday)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].startTime.getHours()).toBe(8)
-      expect(blocks[0].endTime.getHours()).toBe(18)
+      expect(getZonedDateParts(blocks[0].startTime).hour).toBe(8)
+      expect(getZonedDateParts(blocks[0].endTime).hour).toBe(18)
       expect(blocks[0].duration).toBe(600)
     })
 
@@ -150,9 +151,9 @@ describe('Basiskennzahlen', () => {
       const overnight = event('overnight', localDate(8, 17), localDate(9, 9))
       const blocks = calculateFreeTimeBlocks([overnight], monday, localDate(9))
 
-      expect(blocks.map((block) => [block.startTime.getDate(), block.duration])).toEqual([
-        [8, 540],
-        [9, 540],
+      expect(blocks.map((block) => [getLocalDateKey(block.startTime), block.duration])).toEqual([
+        ['2024-01-08', 540],
+        ['2024-01-09', 540],
       ])
     })
   })
@@ -187,6 +188,88 @@ describe('Basiskennzahlen', () => {
         new Date('2024-01-08T01:30:00+01:00'),
       )
       const stats = calculateEventsByDay([offsetEvent], monday, monday)
+
+      expect(stats[0].eventCount).toBe(1)
+      expect(stats[0].totalDuration).toBe(60)
+    })
+
+    it('teilt einen Termin an lokaler Berliner Mitternacht exakt auf', () => {
+      const crossingMidnight = event(
+        'midnight',
+        new Date('2024-01-08T23:30:00+01:00'),
+        new Date('2024-01-09T00:30:00+01:00'),
+      )
+      const stats = calculateEventsByDay([crossingMidnight], monday, localDate(9))
+
+      expect(stats.map((day) => [getLocalDateKey(day.date), day.totalDuration])).toEqual([
+        ['2024-01-08', 30],
+        ['2024-01-09', 30],
+      ])
+    })
+
+    it('berechnet Arbeitszeitblöcke auch in der Sommerzeit in Europe/Berlin', () => {
+      const july8 = zonedDateTimeToDate({
+        year: 2024,
+        month: 7,
+        day: 8,
+        hour: 0,
+        minute: 0,
+        second: 0,
+      })
+      const summerMeeting = event(
+        'summer',
+        new Date('2024-07-08T09:00:00+02:00'),
+        new Date('2024-07-08T10:00:00+02:00'),
+      )
+
+      expect(
+        calculateFreeTimeBlocks([summerMeeting], july8, july8).map((block) => block.duration),
+      ).toEqual([60, 480])
+    })
+
+    it('ordnet einen UTC-Termin dem Berliner Folgetag zu', () => {
+      const nextDayInBerlin = event(
+        'utc-next-day',
+        new Date('2024-01-08T23:30:00Z'),
+        new Date('2024-01-08T23:45:00Z'),
+      )
+      const stats = calculateEventsByDay([nextDayInBerlin], monday, localDate(9))
+
+      expect(stats.map((day) => day.eventCount)).toEqual([0, 1])
+      expect(stats.map((day) => day.totalDuration)).toEqual([0, 15])
+    })
+
+    it.each([
+      {
+        name: 'Winterzeit',
+        start: '2024-01-08T09:00:00+01:00',
+        end: '2024-01-08T10:00:00+01:00',
+        analysisDay: zonedDateTimeToDate({ year: 2024, month: 1, day: 8, hour: 0, minute: 0, second: 0 }),
+      },
+      {
+        name: 'Sommerzeit',
+        start: '2024-07-08T09:00:00+02:00',
+        end: '2024-07-08T10:00:00+02:00',
+        analysisDay: zonedDateTimeToDate({ year: 2024, month: 7, day: 8, hour: 0, minute: 0, second: 0 }),
+      },
+      {
+        name: 'Umstellung auf Sommerzeit',
+        start: '2024-03-31T01:30:00+01:00',
+        end: '2024-03-31T03:30:00+02:00',
+        analysisDay: zonedDateTimeToDate({ year: 2024, month: 3, day: 31, hour: 0, minute: 0, second: 0 }),
+      },
+      {
+        name: 'Umstellung auf Winterzeit',
+        start: '2024-10-27T02:30:00+02:00',
+        end: '2024-10-27T02:30:00+01:00',
+        analysisDay: zonedDateTimeToDate({ year: 2024, month: 10, day: 27, hour: 0, minute: 0, second: 0 }),
+      },
+    ])('berechnet Tagesminuten während $name unabhängig von der Systemzeitzone', ({ start, end, analysisDay }) => {
+      const stats = calculateEventsByDay(
+        [event('zoned', new Date(start), new Date(end))],
+        analysisDay,
+        analysisDay,
+      )
 
       expect(stats[0].eventCount).toBe(1)
       expect(stats[0].totalDuration).toBe(60)

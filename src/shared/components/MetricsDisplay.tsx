@@ -4,6 +4,7 @@
 
 import './MetricsDisplay.css'
 import { formatMinutesToHours } from '../services/metrics'
+import { ANALYSIS_TIME_ZONE } from '../services/timeZone'
 import type { BaseMetrics, DayEventStats } from '../types/calendar'
 
 type MetricsDisplayProps = {
@@ -52,7 +53,14 @@ export function MetricsDisplay({ metrics }: MetricsDisplayProps) {
           <tbody>
             {metrics.eventsByDay.map((day: DayEventStats) => (
               <tr key={day.date.toISOString()}>
-                <td>{day.date.toLocaleDateString('de-DE', { weekday: 'short', month: '2-digit', day: '2-digit' })}</td>
+                <td>
+                  {day.date.toLocaleDateString('de-DE', {
+                    weekday: 'short',
+                    month: '2-digit',
+                    day: '2-digit',
+                    timeZone: ANALYSIS_TIME_ZONE,
+                  })}
+                </td>
                 <td>{day.eventCount}</td>
                 <td>{formatMinutesToHours(day.totalDuration)}</td>
               </tr>

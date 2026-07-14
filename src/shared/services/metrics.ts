@@ -5,6 +5,14 @@ import type {
   FreeTimeBlock,
   WorkingHoursConfig,
 } from '../types/calendar'
+import {
+  addCalendarDays,
+  dateAtMinutes,
+  getDayBoundaries,
+  getLocalDateKey,
+} from './timeZone'
+
+export { ANALYSIS_TIME_ZONE } from './timeZone'
 
 export const DEFAULT_WORKING_HOURS: WorkingHoursConfig = {
   startTime: '08:00',
@@ -33,32 +41,9 @@ function getEventDurationMinutes(event: CalendarEvent): number {
   return isValidEvent(event) ? getDurationMinutes(event.startTime, event.endTime) : 0
 }
 
-function startOfDay(date: Date): Date {
-  const result = new Date(date)
-  result.setHours(0, 0, 0, 0)
-  return result
-}
-
-function nextDay(date: Date): Date {
-  const result = startOfDay(date)
-  result.setDate(result.getDate() + 1)
-  return result
-}
-
 function timeStringToMinutes(time: string): number {
   const [hours, minutes] = time.split(':').map(Number)
   return hours * 60 + minutes
-}
-
-function dateAtMinutes(date: Date, minutesSinceMidnight: number): Date {
-  const result = startOfDay(date)
-  result.setHours(
-    Math.floor(minutesSinceMidnight / 60),
-    minutesSinceMidnight % 60,
-    0,
-    0,
-  )
-  return result
 }
 
 function overlaps(startTime: Date, endTime: Date, rangeStart: Date, rangeEnd: Date): boolean {
@@ -97,12 +82,21 @@ function mergeIntervals(intervals: TimeInterval[]): TimeInterval[] {
   return merged
 }
 
-function getInclusiveAnalysisRange(startDate: Date, endDate: Date): TimeInterval | null {
+type AnalysisRange = TimeInterval & {
+  startDateKey: string
+  endDateKey: string
+}
+
+function getInclusiveAnalysisRange(startDate: Date, endDate: Date): AnalysisRange | null {
   if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return null
 
-  const rangeStart = startOfDay(startDate)
-  const rangeEnd = nextDay(endDate)
-  return rangeStart < rangeEnd ? { startTime: rangeStart, endTime: rangeEnd } : null
+  const startDateKey = getLocalDateKey(startDate)
+  const endDateKey = getLocalDateKey(endDate)
+  const rangeStart = getDayBoundaries(startDateKey).startTime
+  const rangeEnd = getDayBoundaries(endDateKey).endTime
+  return rangeStart < rangeEnd
+    ? { startTime: rangeStart, endTime: rangeEnd, startDateKey, endDateKey }
+    : null
 }
 
 export function calculateEventCount(events: CalendarEvent[]): number {
@@ -139,12 +133,13 @@ export function calculateFreeTimeBlocks(
   }
 
   const freeBlocks: FreeTimeBlock[] = []
-  const currentDate = new Date(analysisRange.startTime)
+  let currentDateKey = analysisRange.startDateKey
 
-  while (currentDate < analysisRange.endTime) {
-    if (config.workDays.includes(currentDate.getDay())) {
-      const workStart = dateAtMinutes(currentDate, workStartMinutes)
-      const workEnd = dateAtMinutes(currentDate, workEndMinutes)
+  while (currentDateKey <= analysisRange.endDateKey) {
+    const day = getDayBoundaries(currentDateKey)
+    if (config.workDays.includes(day.dayOfWeek)) {
+      const workStart = dateAtMinutes(currentDateKey, workStartMinutes)
+      const workEnd = dateAtMinutes(currentDateKey, workEndMinutes)
       const busyIntervals = mergeIntervals(
         events
           .filter(isValidEvent)
@@ -173,7 +168,7 @@ export function calculateFreeTimeBlocks(
       }
     }
 
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDateKey = addCalendarDays(currentDateKey, 1)
   }
 
   return freeBlocks
@@ -189,11 +184,10 @@ export function calculateEventsByDay(
 
   const validEvents = events.filter(isValidEvent)
   const stats: DayEventStats[] = []
-  const currentDate = new Date(analysisRange.startTime)
+  let currentDateKey = analysisRange.startDateKey
 
-  while (currentDate < analysisRange.endTime) {
-    const dayStart = new Date(currentDate)
-    const dayEnd = nextDay(dayStart)
+  while (currentDateKey <= analysisRange.endDateKey) {
+    const { startTime: dayStart, endTime: dayEnd } = getDayBoundaries(currentDateKey)
     const dayIntervals = validEvents
       .map((event) => clipInterval(event.startTime, event.endTime, dayStart, dayEnd))
       .filter((interval): interval is TimeInterval => interval !== null)
@@ -206,7 +200,7 @@ export function calculateEventsByDay(
         0,
       ),
     })
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDateKey = addCalendarDays(currentDateKey, 1)
   }
 
   return stats

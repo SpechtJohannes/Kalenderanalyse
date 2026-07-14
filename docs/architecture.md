@@ -82,7 +82,7 @@ Standardwerte (konfigurierbar):
 - **Direkt aneinandergrenzende Termine**: Werden als ein Block behandelt
 - **Termine außerhalb Arbeitszeit**: Beeinflussen freie Zeitblöcke nicht
 - **Negative, leere oder ungültige Dauern**: Werden vollständig aus den Kennzahlen ausgeschlossen
-- **Zeitzonen und Sommerzeit**: `Date`-Zeitpunkte werden als absolute Zeitpunkte ausgewertet; Tagesgrenzen und Arbeitszeiten richten sich nach der lokalen Browser-Zeitzone
+- **Zeitzonen und Sommerzeit**: `Date`-Zeitpunkte werden als absolute Zeitpunkte ausgewertet; Kalendertage und Arbeitszeiten werden ausdrücklich in der zentralen Analysezeitzone `Europe/Berlin` gebildet
 
 ## Kalenderimport und Normalisierung
 
@@ -109,8 +109,10 @@ Da vor diesem Issue keine ICS-Bibliothek oder bestehende Parserschicht vorhanden
 
 - UTC-Werte mit `Z` werden direkt als absolute `Date`-Zeitpunkte gespeichert.
 - Werte mit `TZID` werden über die IANA-Zeitzonenunterstützung von `Intl.DateTimeFormat` in absolute Zeitpunkte überführt. Die jeweilige Sommerzeitregel bleibt dadurch erhalten.
-- „Floating“-Zeitpunkte ohne UTC-Kennung oder `TZID` werden in der lokalen Browser-Zeitzone interpretiert.
-- Ganztägige `VALUE=DATE`-Werte werden an lokalen Tagesgrenzen erzeugt; das in ICS exklusive Enddatum bleibt erhalten.
+- „Floating“-Zeitpunkte ohne UTC-Kennung oder `TZID` werden in der Analysezeitzone `Europe/Berlin` interpretiert.
+- Ganztägige `VALUE=DATE`-Werte werden an Tagesgrenzen der Analysezeitzone erzeugt; das in ICS exklusive Enddatum bleibt erhalten.
 - Ungültige Datumswerte, fehlende Grenzen und nicht positive Dauern werden verworfen und gemeldet.
 - Doppelte UIDs erhalten in Eingabereihenfolge stabile Suffixe wie `#2`, damit keine Termine überschrieben werden.
+
+Die Funktionen in `shared/services/timeZone.ts` kapseln Datumsschlüssel, zonierte Tages- und Arbeitszeitgrenzen sowie Intervallüberschneidungen. Dadurch hängt die fachliche Zuordnung nicht von der Prozesszeitzone des Browsers, Entwicklungsrechners oder CI-Runners ab. Sommer- und Winterzeit werden über die IANA-Regeln von `Intl.DateTimeFormat` berücksichtigt.
 
