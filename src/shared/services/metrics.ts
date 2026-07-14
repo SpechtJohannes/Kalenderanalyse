@@ -263,7 +263,8 @@ export function formatMinutesToHours(minutes: number): string {
   const roundedMinutes = Math.round(minutes)
   const hours = Math.floor(roundedMinutes / 60)
   const remainingMinutes = roundedMinutes % 60
-  return remainingMinutes === 0 ? `${hours}h` : `${hours}h ${remainingMinutes}m`
+  if (hours === 0) return `${remainingMinutes} Min.`
+  return remainingMinutes === 0 ? `${hours} Std.` : `${hours} Std. ${remainingMinutes} Min.`
 }
 
 export function formatMinutesToDecimalHours(minutes: number): string {

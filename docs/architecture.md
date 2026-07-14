@@ -40,6 +40,7 @@ Wiederverwendbare UI-Komponenten:
 - **SectionCard** – Einfache Darstellung von Feature-Übersichten
 - **AppShell** – Layout-Komponente für die Anwendung
 - **MetricsDisplay** – Darstellung von Basiskennzahlen mit Kennzahlenkarten und Tabelle
+- **MetricCard** – reine, wiederverwendbare Darstellung eines bereits formatierten Kennzahlenwerts
 
 ### Shared Services
 

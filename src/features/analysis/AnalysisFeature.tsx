@@ -41,9 +41,9 @@ export function AnalysisFeature({ events = [] }: AnalysisFeatureProps) {
   return (
     <section className="analysis-feature">
       <SectionCard
-        title="Analyse"
+        title="Analyse-Dashboard"
         description="Basiskennzahlen für den ausgewählten Zeitraum"
-        status="In Entwicklung"
+        status="Verfügbar"
       />
 
       <div className="analysis-period">

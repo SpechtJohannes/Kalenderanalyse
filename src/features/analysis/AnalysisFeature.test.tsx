@@ -22,7 +22,7 @@ function event(id: string, start: string, end: string): CalendarEvent {
 }
 
 function eventCount(): HTMLElement {
-  const card = screen.getByRole('heading', { name: 'Anzahl Termine' }).closest('article')
+  const card = screen.getByRole('heading', { name: 'Termine' }).closest('article')
   if (!card) throw new Error('Kennzahlenkarte wurde nicht gefunden.')
   return within(card).getByText(/^\d+$/)
 }
@@ -77,7 +77,7 @@ describe('AnalysisFeature', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Das Enddatum darf nicht vor dem Startdatum liegen.',
     )
-    expect(screen.queryByText('Anzahl Termine')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Termine' })).not.toBeInTheDocument()
 
     fireEvent.change(end, { target: { value: '2024-01-20' } })
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
