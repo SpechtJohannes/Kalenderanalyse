@@ -49,11 +49,11 @@ Feature-Module für die Anwendung:
 
 ### Definition
 
-1. **Anzahl Termine** – Gesamtzahl aller Termine im Analysezeitraum
-2. **Meetingstunden** – Summe aller Termindauern in Minuten (intern), formatiert als Stunden
-3. **Durchschnittliche Meetingdauer** – (Gesamt-Meetingminuten / Anzahl Termine); null wenn keine Termine
+1. **Anzahl Termine** – Anzahl aller gültigen Termine, die den inklusiven Analysezeitraum berühren
+2. **Meetingstunden** – Summe der einzelnen Termindauern innerhalb des Analysezeitraums in Minuten (intern), formatiert als Stunden. Überschneidende Termine werden hier einzeln gezählt.
+3. **Durchschnittliche Meetingdauer** – Gesamt-Meetingminuten geteilt durch die Anzahl gültiger Termine; `null`, wenn keine gültigen Termine vorhanden sind
 4. **Freie Zeitblöcke** – Kontinuierliche freie Zeit zwischen/um Termine innerhalb der Arbeitszeit
-5. **Termine pro Tag** – Anzahl und Gesamtdauer der Termine pro Kalendertag
+5. **Termine pro Tag** – Anzahl und anteilige Dauer der Termine pro lokalem Kalendertag. Alle Tage im Analysezeitraum werden ausgegeben, auch wenn ihre Anzahl null ist. Mehrtägige Termine zählen an jedem berührten Tag.
 
 ### Arbeitszeit-Konfiguration
 
@@ -75,10 +75,11 @@ Standardwerte (konfigurierbar):
 ### Sonderfälle
 
 - **Keine Termine**: Vollständiger Tag als freier Block, Durchschnitt = null
-- **Ganztägige Termine**: Werden als 8 Stunden Arbeitszeit gezählt
-- **Termine über Mitternacht**: Werden auf den Starttag begrenzt
-- **Überschneidende Termine**: Werden vor Berechnung zusammengeführt
+- **Ganztägige Termine**: Ihre tatsächliche Start-/Enddauer fließt in Meetingstunden ein; bei freien Blöcken belegen sie nur die überschneidende Arbeitszeit
+- **Termine über Mitternacht**: Werden pro berührtem Kalendertag betrachtet
+- **Überschneidende Termine**: Werden nur für die belegte Arbeitszeit zusammengeführt; Anzahl und Meetingstunden bleiben terminbezogen
 - **Direkt aneinandergrenzende Termine**: Werden als ein Block behandelt
 - **Termine außerhalb Arbeitszeit**: Beeinflussen freie Zeitblöcke nicht
-- **Negative oder ungültige Dauern**: Werden als 0 Minuten behandelt
+- **Negative, leere oder ungültige Dauern**: Werden vollständig aus den Kennzahlen ausgeschlossen
+- **Zeitzonen und Sommerzeit**: `Date`-Zeitpunkte werden als absolute Zeitpunkte ausgewertet; Tagesgrenzen und Arbeitszeiten richten sich nach der lokalen Browser-Zeitzone
 

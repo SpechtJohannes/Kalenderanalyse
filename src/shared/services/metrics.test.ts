@@ -1,463 +1,215 @@
-/**
- * Tests für die Basiskennzahlen-Berechnung
- */
-
-import { describe, it, expect, beforeEach } from 'vitest'
-import type { CalendarEvent } from '../../shared/types/calendar'
+import { describe, expect, it } from 'vitest'
+import type { CalendarEvent } from '../types/calendar'
 import {
-  calculateEventCount,
-  calculateTotalMeetingMinutes,
   calculateAverageMeetingDuration,
-  calculateFreeTimeBlocks,
-  calculateEventsByDay,
   calculateBaseMetrics,
-  formatMinutesToHours,
+  calculateEventCount,
+  calculateEventsByDay,
+  calculateFreeTimeBlocks,
+  calculateTotalMeetingMinutes,
   formatMinutesToDecimalHours,
-} from '../../shared/services/metrics'
+  formatMinutesToHours,
+} from './metrics'
 
-describe('Basiskennzahlen-Berechnungen', () => {
-  let startDate: Date
-  let endDate: Date
+const monday = new Date(2024, 0, 8)
+const friday = new Date(2024, 0, 12)
 
-  beforeEach(() => {
-    // Beispielwoche: Montag 2024-01-08 bis Freitag 2024-01-12
-    startDate = new Date('2024-01-08') // Montag
-    endDate = new Date('2024-01-12') // Freitag
+function event(
+  id: string,
+  startTime: Date,
+  endTime: Date,
+  isAllDay = false,
+): CalendarEvent {
+  return { id, title: `Termin ${id}`, startTime, endTime, isAllDay }
+}
+
+function localDate(day: number, hour = 0, minute = 0): Date {
+  return new Date(2024, 0, day, hour, minute)
+}
+
+describe('Basiskennzahlen', () => {
+  it('liefert für einen leeren Kalender sichere Nullwerte und freie Arbeitstage', () => {
+    const metrics = calculateBaseMetrics([], monday, friday)
+
+    expect(metrics.eventCount).toBe(0)
+    expect(metrics.totalMeetingMinutes).toBe(0)
+    expect(metrics.averageMeetingDuration).toBeNull()
+    expect(metrics.freeTimeBlocks).toHaveLength(5)
+    expect(metrics.freeTimeBlocks.every((block) => block.duration === 600)).toBe(true)
+    expect(metrics.eventsByDay.map((day) => day.eventCount)).toEqual([0, 0, 0, 0, 0])
   })
 
-  describe('calculateEventCount', () => {
-    it('sollte 0 für leeren Kalender zurückgeben', () => {
-      expect(calculateEventCount([])).toBe(0)
-    })
+  it('berechnet Anzahl, Summe und Durchschnitt mehrerer Termine getrennt von belegter Zeit', () => {
+    const events = [
+      event('1', localDate(8, 9), localDate(8, 10)),
+      event('2', localDate(8, 9, 30), localDate(8, 11)),
+      event('3', localDate(9, 14), localDate(9, 14, 30)),
+    ]
 
-    it('sollte korrekte Anzahl der Termine zählen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T14:00:00'),
-          endTime: new Date('2024-01-08T15:00:00'),
-          isAllDay: false,
-        },
-      ]
+    expect(calculateEventCount(events)).toBe(3)
+    expect(calculateTotalMeetingMinutes(events)).toBe(180)
+    expect(calculateAverageMeetingDuration(events)).toBe(60)
 
-      expect(calculateEventCount(events)).toBe(2)
-    })
+    const mondayBlocks = calculateFreeTimeBlocks(events, monday, monday)
+    expect(mondayBlocks.map((block) => block.duration)).toEqual([60, 420])
   })
 
-  describe('calculateTotalMeetingMinutes', () => {
-    it('sollte 0 für leeren Kalender zurückgeben', () => {
-      expect(calculateTotalMeetingMinutes([])).toBe(0)
-    })
+  it('ignoriert ungültige und nicht positive Termindauern konsistent', () => {
+    const events = [
+      event('negative', localDate(8, 10), localDate(8, 9)),
+      event('zero', localDate(8, 10), localDate(8, 10)),
+      event('invalid', new Date(Number.NaN), localDate(8, 10)),
+    ]
 
-    it('sollte Meetingdauern korrekt summieren', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'), // 60 Minuten
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T14:00:00'),
-          endTime: new Date('2024-01-08T14:30:00'), // 30 Minuten
-          isAllDay: false,
-        },
-      ]
-
-      expect(calculateTotalMeetingMinutes(events)).toBe(90)
-    })
-
-    it('sollte ganztägige Termine als 8 Stunden rechnen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Ganztägig',
-          startTime: new Date('2024-01-08T00:00:00'),
-          endTime: new Date('2024-01-08T23:59:59'),
-          isAllDay: true,
-        },
-      ]
-
-      expect(calculateTotalMeetingMinutes(events)).toBe(8 * 60)
-    })
-
-    it('sollte ungültige Dauern ignorieren', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Invalid',
-          startTime: new Date('2024-01-08T10:00:00'),
-          endTime: new Date('2024-01-08T09:00:00'), // Negative Dauer
-          isAllDay: false,
-        },
-      ]
-
-      expect(calculateTotalMeetingMinutes(events)).toBe(0)
-    })
+    expect(calculateEventCount(events)).toBe(0)
+    expect(calculateTotalMeetingMinutes(events)).toBe(0)
+    expect(calculateAverageMeetingDuration(events)).toBeNull()
   })
 
-  describe('calculateAverageMeetingDuration', () => {
-    it('sollte null für leeren Kalender zurückgeben', () => {
-      expect(calculateAverageMeetingDuration([])).toBeNull()
-    })
+  it('berechnet die tatsächliche Dauer ganztägiger Termine', () => {
+    const allDay = event('all-day', localDate(8), localDate(9), true)
 
-    it('sollte korrekte Durchschnittsdauer berechnen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'), // 60 Minuten
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T14:00:00'),
-          endTime: new Date('2024-01-08T14:30:00'), // 30 Minuten
-          isAllDay: false,
-        },
-      ]
-
-      expect(calculateAverageMeetingDuration(events)).toBe(45)
-    })
-
-    it('sollte Durchschnitt mit einem Meeting berechnen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:30:00'),
-          isAllDay: false,
-        },
-      ]
-
-      expect(calculateAverageMeetingDuration(events)).toBe(90)
-    })
+    expect(calculateTotalMeetingMinutes([allDay])).toBe(24 * 60)
+    expect(calculateFreeTimeBlocks([allDay], monday, monday)).toEqual([])
   })
 
-  describe('calculateFreeTimeBlocks', () => {
-    it('sollte einen vollständig freien Arbeitstag erkennen', () => {
-      const events: CalendarEvent[] = []
+  it('berechnet Dauern über einen Sommerzeitwechsel anhand absoluter Zeitpunkte', () => {
+    const dstEvent = event(
+      'dst',
+      new Date('2024-03-31T01:30:00+01:00'),
+      new Date('2024-03-31T03:30:00+02:00'),
+    )
 
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
+    expect(calculateTotalMeetingMinutes([dstEvent])).toBe(60)
+  })
 
-      // Montag bis Freitag = 5 Tage à 10 Stunden = 5 Blöcke
-      expect(blocks.length).toBe(5)
-      blocks.forEach((block) => {
-        expect(block.duration).toBe(10 * 60) // 10 Stunden
-      })
-    })
-
-    it('sollte freie Zeit zwischen Meetings berechnen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Morning Meeting',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Afternoon Meeting',
-          startTime: new Date('2024-01-08T14:00:00'),
-          endTime: new Date('2024-01-08T15:00:00'),
-          isAllDay: false,
-        },
+  describe('freie Zeitblöcke', () => {
+    it('führt überlappende und direkt angrenzende Termine zusammen', () => {
+      const events = [
+        event('1', localDate(8, 9), localDate(8, 10)),
+        event('2', localDate(8, 9, 30), localDate(8, 11)),
+        event('3', localDate(8, 11), localDate(8, 12)),
       ]
 
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
-
-      // Montag: 08:00-09:00 (60 min), 10:00-14:00 (240 min), 15:00-18:00 (180 min)
-      // Dienstag-Freitag: je 600 min
-      // Total: 4 Blöcke am Montag + 4 Tage à 1 Block = 8 Blöcke
-      expect(blocks.length).toBeGreaterThan(0)
-
-      const mondayBlocks = blocks.filter((b) => b.startTime.getDay() === 1)
-      expect(mondayBlocks.length).toBe(3) // 3 freie Blöcke am Montag
-      expect(mondayBlocks[0].duration).toBe(60) // Vor erstem Meeting
-      expect(mondayBlocks[1].duration).toBe(240) // Zwischen Meetings
-      expect(mondayBlocks[2].duration).toBe(180) // Nach letztem Meeting
+      expect(calculateFreeTimeBlocks(events, monday, monday).map((block) => block.duration)).toEqual([
+        60,
+        360,
+      ])
     })
 
-    it('sollte überlappende Termine zusammenführen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T09:30:00'),
-          endTime: new Date('2024-01-08T11:00:00'),
-          isAllDay: false,
-        },
+    it('begrenzt teilweise außerhalb der Arbeitszeit liegende Termine', () => {
+      const events = [
+        event('early', localDate(8, 7), localDate(8, 9)),
+        event('late', localDate(8, 17), localDate(8, 19)),
       ]
 
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
-
-      // Merged zu 09:00-11:00
-      // Montag: 08:00-09:00 (60 min), 11:00-18:00 (420 min)
-      const mondayBlocks = blocks.filter((b) => b.startTime.getDay() === 1)
-      expect(mondayBlocks.length).toBe(2)
-      expect(mondayBlocks[0].duration).toBe(60)
-      expect(mondayBlocks[1].duration).toBe(420)
+      const blocks = calculateFreeTimeBlocks(events, monday, monday)
+      expect(blocks).toHaveLength(1)
+      expect(blocks[0].startTime.getHours()).toBe(9)
+      expect(blocks[0].endTime.getHours()).toBe(17)
+      expect(blocks[0].duration).toBe(480)
     })
 
-    it('sollte direkt aneinandergrenzende Termine zusammenführen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T10:00:00'),
-          endTime: new Date('2024-01-08T11:00:00'),
-          isAllDay: false,
-        },
+    it('ignoriert vollständig außerhalb der Arbeitszeit liegende Termine exakt', () => {
+      const events = [
+        event('before', localDate(8, 6), localDate(8, 7)),
+        event('after', localDate(8, 19), localDate(8, 20)),
       ]
 
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
-
-      const mondayBlocks = blocks.filter((b) => b.startTime.getDay() === 1)
-      expect(mondayBlocks.length).toBe(2)
-      expect(mondayBlocks[0].duration).toBe(60) // 08:00-09:00
-      expect(mondayBlocks[1].duration).toBe(420) // 11:00-18:00
+      const blocks = calculateFreeTimeBlocks(events, monday, monday)
+      expect(blocks).toHaveLength(1)
+      expect(blocks[0].startTime.getHours()).toBe(8)
+      expect(blocks[0].endTime.getHours()).toBe(18)
+      expect(blocks[0].duration).toBe(600)
     })
 
-    it('sollte Termine außerhalb der Arbeitszeit ignorieren', () => {
-      // Erstelle Events mit UTC-Zeiten zu vermeiden, Zeitzone-Probleme
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Before work',
-          startTime: new Date('2024-01-08T06:00:00Z'),
-          endTime: new Date('2024-01-08T07:00:00Z'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'After work',
-          startTime: new Date('2024-01-08T19:00:00Z'),
-          endTime: new Date('2024-01-08T20:00:00Z'),
-          isAllDay: false,
-        },
-      ]
-
-      const blocks = calculateFreeTimeBlocks(events, new Date('2024-01-08Z'), new Date('2024-01-12Z'))
-
-      // Prüfe, dass es freie Blöcke gibt (sollte nicht null sein)
-      expect(blocks.length).toBeGreaterThan(0)
-      // Gesamtdauer über alle Wochentage sollte mindestens 5 * 10 Stunden sein
-      const totalDuration = blocks.reduce((sum, b) => sum + b.duration, 0)
-      expect(totalDuration).toBeGreaterThanOrEqual(5 * 10 * 60 - 120) // Toleranz für Zeitzone
+    it('ignoriert Wochenenden', () => {
+      expect(calculateFreeTimeBlocks([], localDate(13), localDate(14))).toEqual([])
+      expect(
+        calculateFreeTimeBlocks(
+          [event('weekend', localDate(13, 9), localDate(13, 10))],
+          localDate(13),
+          localDate(14),
+        ),
+      ).toEqual([])
     })
 
-    it('sollte Termine teilweise außerhalb der Arbeitszeit begrenzen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Spans work hours',
-          startTime: new Date('2024-01-08T07:00:00'), // Vor 08:00
-          endTime: new Date('2024-01-08T09:00:00'), // Innerhalb
-          isAllDay: false,
-        },
-      ]
+    it('berücksichtigt einen Termin über Mitternacht an jedem betroffenen Arbeitstag', () => {
+      const overnight = event('overnight', localDate(8, 17), localDate(9, 9))
+      const blocks = calculateFreeTimeBlocks([overnight], monday, localDate(9))
 
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
-
-      const mondayBlocks = blocks.filter((b) => b.startTime.getDay() === 1)
-      expect(mondayBlocks.length).toBe(1)
-      expect(mondayBlocks[0].startTime.getHours()).toBe(9) // Nach "begrenzte" Meeting
-      expect(mondayBlocks[0].duration).toBe(540) // 09:00-18:00 = 9 Stunden
-    })
-
-    it('sollte Wochenenden ignorieren', () => {
-      const weekendStart = new Date('2024-01-13') // Samstag
-      const weekendEnd = new Date('2024-01-14') // Sonntag
-
-      const events: CalendarEvent[] = []
-
-      const blocks = calculateFreeTimeBlocks(events, weekendStart, weekendEnd)
-
-      // Keine Blöcke an Wochenenden
-      expect(blocks.length).toBe(0)
-    })
-
-    it('sollte Termine über Mitternacht behandeln', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Spanning midnight',
-          startTime: new Date('2024-01-08T23:00:00'),
-          endTime: new Date('2024-01-09T01:00:00'),
-          isAllDay: false,
-        },
-      ]
-
-      const blocks = calculateFreeTimeBlocks(events, startDate, endDate)
-
-      // Sollte nicht abstürzen
-      expect(blocks.length).toBeGreaterThan(0)
+      expect(blocks.map((block) => [block.startTime.getDate(), block.duration])).toEqual([
+        [8, 540],
+        [9, 540],
+      ])
     })
   })
 
-  describe('calculateEventsByDay', () => {
-    it('sollte 0 Events für Tage ohne Termine zeigen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-      ]
+  describe('Termine pro Tag und Analysezeitraum', () => {
+    it('enthält alle Kalendertage des Zeitraums einschließlich Tagen ohne Termine', () => {
+      const stats = calculateEventsByDay(
+        [event('1', localDate(8, 9), localDate(8, 10))],
+        monday,
+        friday,
+      )
 
-      const stats = calculateEventsByDay(events, startDate, endDate)
+      expect(stats).toHaveLength(5)
+      expect(stats.map((day) => day.eventCount)).toEqual([1, 0, 0, 0, 0])
+    })
 
-      // 5 Tage (Montag-Freitag)
-      expect(stats.length).toBe(5)
+    it('zählt mehrtägige Termine je betroffenem Kalendertag und teilt ihre Dauer auf', () => {
+      const stats = calculateEventsByDay(
+        [event('overnight', localDate(8, 23), localDate(9, 1))],
+        monday,
+        localDate(9),
+      )
 
-      // Montag sollte 1 Event haben
+      expect(stats.map((day) => day.eventCount)).toEqual([1, 1])
+      expect(stats.map((day) => day.totalDuration)).toEqual([60, 60])
+    })
+
+    it('verwendet lokale Kalendertage auch bei Zeitpunkten mit explizitem Offset', () => {
+      const offsetEvent = event(
+        'offset',
+        new Date('2024-01-08T00:30:00+01:00'),
+        new Date('2024-01-08T01:30:00+01:00'),
+      )
+      const stats = calculateEventsByDay([offsetEvent], monday, monday)
+
       expect(stats[0].eventCount).toBe(1)
-
-      // Andere Tage sollten 0 haben
-      expect(stats[1].eventCount).toBe(0)
-      expect(stats[2].eventCount).toBe(0)
-    })
-
-    it('sollte mehrere Termine an einem Tag zählen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Meeting 2',
-          startTime: new Date('2024-01-08T14:00:00'),
-          endTime: new Date('2024-01-08T15:00:00'),
-          isAllDay: false,
-        },
-      ]
-
-      const stats = calculateEventsByDay(events, startDate, endDate)
-
-      expect(stats[0].eventCount).toBe(2)
-      expect(stats[0].totalDuration).toBe(120)
-    })
-
-    it('sollte Termine an verschiedenen Tagen berücksichtigen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Monday Meeting',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
-        {
-          id: '2',
-          title: 'Wednesday Meeting',
-          startTime: new Date('2024-01-10T14:00:00'),
-          endTime: new Date('2024-01-10T15:30:00'),
-          isAllDay: false,
-        },
-      ]
-
-      const stats = calculateEventsByDay(events, startDate, endDate)
-
-      expect(stats[0].eventCount).toBe(1) // Montag
       expect(stats[0].totalDuration).toBe(60)
-
-      expect(stats[2].eventCount).toBe(1) // Mittwoch
-      expect(stats[2].totalDuration).toBe(90)
-    })
-  })
-
-  describe('calculateBaseMetrics', () => {
-    it('sollte ein leeres Ergebnis für leeren Kalender haben', () => {
-      const metrics = calculateBaseMetrics([], startDate, endDate)
-
-      expect(metrics.eventCount).toBe(0)
-      expect(metrics.totalMeetingMinutes).toBe(0)
-      expect(metrics.averageMeetingDuration).toBeNull()
-      expect(metrics.freeTimeBlocks.length).toBe(5)
-      expect(metrics.eventsByDay.length).toBe(5)
     })
 
-    it('sollte alle Metriken zusammen berechnen', () => {
-      const events: CalendarEvent[] = [
-        {
-          id: '1',
-          title: 'Meeting 1',
-          startTime: new Date('2024-01-08T09:00:00'),
-          endTime: new Date('2024-01-08T10:00:00'),
-          isAllDay: false,
-        },
+    it('filtert auf den Analysezeitraum und begrenzt über dessen Rand laufende Termine', () => {
+      const events = [
+        event('outside', localDate(7, 9), localDate(7, 10)),
+        event('crossing', localDate(7, 23), localDate(8, 1)),
+        event('inside', localDate(8, 9), localDate(8, 10)),
       ]
+      const metrics = calculateBaseMetrics(events, monday, monday)
 
-      const metrics = calculateBaseMetrics(events, startDate, endDate)
-
-      expect(metrics.eventCount).toBe(1)
-      expect(metrics.totalMeetingMinutes).toBe(60)
+      expect(metrics.eventCount).toBe(2)
+      expect(metrics.totalMeetingMinutes).toBe(120)
       expect(metrics.averageMeetingDuration).toBe(60)
-      expect(metrics.freeTimeBlocks.length).toBeGreaterThan(0)
-      expect(metrics.eventsByDay.length).toBe(5)
+      expect(metrics.eventsByDay[0]).toMatchObject({ eventCount: 2, totalDuration: 120 })
     })
   })
 
-  describe('Formatierung', () => {
-    it('formatMinutesToHours sollte korrekt formatieren', () => {
-      expect(formatMinutesToHours(60)).toBe('1h')
-      expect(formatMinutesToHours(90)).toBe('1h 30m')
-      expect(formatMinutesToHours(120)).toBe('2h')
+  describe('Formatierung und Rundung', () => {
+    it('formatiert und rundet auf die nächste volle Minute', () => {
       expect(formatMinutesToHours(0)).toBe('0h')
-      expect(formatMinutesToHours(-10)).toBe('-')
-    })
-
-    it('formatMinutesToHours sollte NaN/Infinity korrekt behandeln', () => {
-      expect(formatMinutesToHours(NaN)).toBe('-')
-      expect(formatMinutesToHours(Infinity)).toBe('-')
-    })
-
-    it('formatMinutesToDecimalHours sollte korrekt formatieren', () => {
-      expect(formatMinutesToDecimalHours(60)).toBe('1.0h')
+      expect(formatMinutesToHours(60)).toBe('1h')
+      expect(formatMinutesToHours(89.6)).toBe('1h 30m')
+      expect(formatMinutesToHours(149.4)).toBe('2h 29m')
       expect(formatMinutesToDecimalHours(90)).toBe('1.5h')
-      expect(formatMinutesToDecimalHours(120)).toBe('2.0h')
-      expect(formatMinutesToDecimalHours(0)).toBe('0.0h')
-      expect(formatMinutesToDecimalHours(-10)).toBe('-')
+      expect(formatMinutesToDecimalHours(92)).toBe('1.5h')
     })
 
-    it('formatMinutesToDecimalHours sollte NaN/Infinity korrekt behandeln', () => {
-      expect(formatMinutesToDecimalHours(NaN)).toBe('-')
-      expect(formatMinutesToDecimalHours(Infinity)).toBe('-')
+    it('weist negative und nicht endliche Werte zurück', () => {
+      for (const value of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(formatMinutesToHours(value)).toBe('-')
+        expect(formatMinutesToDecimalHours(value)).toBe('-')
+      }
     })
   })
 })

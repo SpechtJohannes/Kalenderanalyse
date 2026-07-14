@@ -1,7 +1,3 @@
-/**
- * Berechnungslogik für Basiskennzahlen
- */
-
 import type {
   BaseMetrics,
   CalendarEvent,
@@ -10,363 +6,258 @@ import type {
   WorkingHoursConfig,
 } from '../types/calendar'
 
-/**
- * Standard-Arbeitszeit-Konfiguration
- */
 export const DEFAULT_WORKING_HOURS: WorkingHoursConfig = {
   startTime: '08:00',
   endTime: '18:00',
-  workDays: [1, 2, 3, 4, 5], // Montag bis Freitag
+  workDays: [1, 2, 3, 4, 5],
 }
 
-/**
- * Hilfsfunktion: Parse Zeitstring (HH:mm) zu Minuten seit Mitternacht
- */
-function timeStringToMinutes(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(':').map(Number)
+type TimeInterval = {
+  startTime: Date
+  endTime: Date
+}
+
+function isValidEvent(event: CalendarEvent): boolean {
+  return (
+    Number.isFinite(event.startTime.getTime()) &&
+    Number.isFinite(event.endTime.getTime()) &&
+    event.endTime.getTime() > event.startTime.getTime()
+  )
+}
+
+function getDurationMinutes(startTime: Date, endTime: Date): number {
+  return Math.max(0, (endTime.getTime() - startTime.getTime()) / 60_000)
+}
+
+function getEventDurationMinutes(event: CalendarEvent): number {
+  return isValidEvent(event) ? getDurationMinutes(event.startTime, event.endTime) : 0
+}
+
+function startOfDay(date: Date): Date {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+function nextDay(date: Date): Date {
+  const result = startOfDay(date)
+  result.setDate(result.getDate() + 1)
+  return result
+}
+
+function timeStringToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number)
   return hours * 60 + minutes
 }
 
-/**
- * Hilfsfunktion: Minutenwert zu HH:mm String
- * Wird derzeit nicht verwendet, ist aber für zukünftige Erweiterungen reserviert
- */
-// function minutesToTimeString(minutes: number): string {
-//   const hours = Math.floor(minutes / 60)
-//   const mins = minutes % 60
-//   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
-// }
+function dateAtMinutes(date: Date, minutesSinceMidnight: number): Date {
+  const result = startOfDay(date)
+  result.setHours(
+    Math.floor(minutesSinceMidnight / 60),
+    minutesSinceMidnight % 60,
+    0,
+    0,
+  )
+  return result
+}
 
-/**
- * Hilfsfunktion: Berechne die Dauer eines Events in Minuten
- * Gibt 0 zurück, wenn die Dauer ungültig ist
- */
-function getEventDurationMinutes(event: CalendarEvent): number {
-  if (event.isAllDay) {
-    // Ganztägige Termine werden als ~8 Stunden gerechnet (oder 0, je nach Anforderung)
-    // Die Spezifikation sagt: "Ganztägige Termine" sind ein Sonderfall
-    // Wir zählen sie als volle 8 Stunden Arbeitszeit
-    return 8 * 60
+function overlaps(startTime: Date, endTime: Date, rangeStart: Date, rangeEnd: Date): boolean {
+  return startTime < rangeEnd && endTime > rangeStart
+}
+
+function clipInterval(
+  startTime: Date,
+  endTime: Date,
+  rangeStart: Date,
+  rangeEnd: Date,
+): TimeInterval | null {
+  if (!overlaps(startTime, endTime, rangeStart, rangeEnd)) return null
+
+  return {
+    startTime: new Date(Math.max(startTime.getTime(), rangeStart.getTime())),
+    endTime: new Date(Math.min(endTime.getTime(), rangeEnd.getTime())),
   }
-
-  const duration = event.endTime.getTime() - event.startTime.getTime()
-  const minutes = Math.round(duration / 1000 / 60)
-
-  // Ungültige oder negative Dauern zurückweisen
-  return minutes > 0 ? minutes : 0
 }
 
-/**
- * Berechne die Anzahl der Termine
- */
-export function calculateEventCount(events: CalendarEvent[]): number {
-  return events.length
-}
+function mergeIntervals(intervals: TimeInterval[]): TimeInterval[] {
+  const sorted = [...intervals].sort(
+    (first, second) => first.startTime.getTime() - second.startTime.getTime(),
+  )
+  const merged: TimeInterval[] = []
 
-/**
- * Berechne die Summe aller Meetingminuten
- */
-export function calculateTotalMeetingMinutes(events: CalendarEvent[]): number {
-  return events.reduce((sum, event) => sum + getEventDurationMinutes(event), 0)
-}
-
-/**
- * Berechne die durchschnittliche Termindauer
- * Gibt null zurück, wenn keine Termine vorhanden sind
- */
-export function calculateAverageMeetingDuration(events: CalendarEvent[]): number | null {
-  if (events.length === 0) {
-    return null
-  }
-
-  const totalMinutes = calculateTotalMeetingMinutes(events)
-  return totalMinutes / events.length
-}
-
-/**
- * Prüfe, ob ein Datum ein Arbeitstag ist
- * Wird derzeit nicht verwendet, ist aber für zukünftige Erweiterungen reserviert
- */
-// function isWorkDay(date: Date, config: WorkingHoursConfig): boolean {
-//   return config.workDays.includes(date.getDay())
-// }
-
-/**
- * Prüfe, ob zwei Events sich überschneiden
- * Wird derzeit nicht verwendet, ist aber für zukünftige Erweiterungen reserviert
- */
-// function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
-//   return event1.startTime < event2.endTime && event1.endTime > event2.startTime
-// }
-
-/**
- * Prüfe, ob zwei Events direkt aneinandergrenzend sind (oder sich überschneiden)
- */
-function eventsAdjacentOrOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
-  return event1.startTime <= event2.endTime && event1.endTime >= event2.startTime
-}
-
-/**
- * Merge benachbarte oder überlappende Events
- */
-function mergeAdjacentEvents(events: CalendarEvent[]): CalendarEvent[] {
-  if (events.length === 0) return []
-
-  // Sortiere nach Startzeit
-  const sorted = [...events].sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-
-  const merged: CalendarEvent[] = []
-
-  for (const event of sorted) {
-    if (merged.length === 0) {
-      merged.push(event)
-      continue
-    }
-
-    const lastEvent = merged[merged.length - 1]
-
-    if (eventsAdjacentOrOverlap(lastEvent, event)) {
-      // Merge mit letztem Event
-      merged[merged.length - 1] = {
-        ...lastEvent,
-        endTime: event.endTime.getTime() > lastEvent.endTime.getTime() ? event.endTime : lastEvent.endTime,
-      }
-    } else {
-      merged.push(event)
+  for (const interval of sorted) {
+    const previous = merged[merged.length - 1]
+    if (!previous || interval.startTime > previous.endTime) {
+      merged.push({ ...interval })
+    } else if (interval.endTime > previous.endTime) {
+      previous.endTime = interval.endTime
     }
   }
 
   return merged
 }
 
-/**
- * Berechne die Dauer eines Zeitblocks in Minuten
- */
-function getBlockDurationMinutes(startTime: Date, endTime: Date): number {
-  const diffMs = endTime.getTime() - startTime.getTime()
-  return Math.max(0, Math.round(diffMs / 1000 / 60))
+function getInclusiveAnalysisRange(startDate: Date, endDate: Date): TimeInterval | null {
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return null
+
+  const rangeStart = startOfDay(startDate)
+  const rangeEnd = nextDay(endDate)
+  return rangeStart < rangeEnd ? { startTime: rangeStart, endTime: rangeEnd } : null
 }
 
-/**
- * Berechne freie Zeitblöcke innerhalb der Arbeitszeit
- */
+export function calculateEventCount(events: CalendarEvent[]): number {
+  return events.filter(isValidEvent).length
+}
+
+export function calculateTotalMeetingMinutes(events: CalendarEvent[]): number {
+  return events.reduce((sum, event) => sum + getEventDurationMinutes(event), 0)
+}
+
+export function calculateAverageMeetingDuration(events: CalendarEvent[]): number | null {
+  const validEvents = events.filter(isValidEvent)
+  if (validEvents.length === 0) return null
+  return calculateTotalMeetingMinutes(validEvents) / validEvents.length
+}
+
 export function calculateFreeTimeBlocks(
   events: CalendarEvent[],
   startDate: Date,
   endDate: Date,
   config: WorkingHoursConfig = DEFAULT_WORKING_HOURS,
 ): FreeTimeBlock[] {
-  const freeBlocks: FreeTimeBlock[] = []
+  const analysisRange = getInclusiveAnalysisRange(startDate, endDate)
+  if (!analysisRange) return []
 
-  // Parse Arbeitszeiten
   const workStartMinutes = timeStringToMinutes(config.startTime)
   const workEndMinutes = timeStringToMinutes(config.endTime)
+  if (
+    !Number.isFinite(workStartMinutes) ||
+    !Number.isFinite(workEndMinutes) ||
+    workStartMinutes >= workEndMinutes
+  ) {
+    return []
+  }
 
-  // Iteriere über jeden Tag im Bereich
-  const currentDate = new Date(startDate)
-  currentDate.setHours(0, 0, 0, 0)
+  const freeBlocks: FreeTimeBlock[] = []
+  const currentDate = new Date(analysisRange.startTime)
 
-  const endDateCopy = new Date(endDate)
-  endDateCopy.setHours(23, 59, 59, 999)
+  while (currentDate < analysisRange.endTime) {
+    if (config.workDays.includes(currentDate.getDay())) {
+      const workStart = dateAtMinutes(currentDate, workStartMinutes)
+      const workEnd = dateAtMinutes(currentDate, workEndMinutes)
+      const busyIntervals = mergeIntervals(
+        events
+          .filter(isValidEvent)
+          .map((event) => clipInterval(event.startTime, event.endTime, workStart, workEnd))
+          .filter((interval): interval is TimeInterval => interval !== null),
+      )
 
-  while (currentDate <= endDateCopy) {
-    const dayOfWeek = currentDate.getDay()
-
-    // Prüfe ob Arbeitstag
-    if (config.workDays.includes(dayOfWeek)) {
-      // Filtere Events für diesen Tag und innerhalb/überschneidend mit Arbeitszeit
-      const dayStart = new Date(currentDate)
-      dayStart.setHours(0, 0, 0, 0)
-
-      const dayEnd = new Date(currentDate)
-      dayEnd.setHours(23, 59, 59, 999)
-
-      const workStartTime = new Date(currentDate)
-      const startHours = Math.floor(workStartMinutes / 60)
-      const startMins = workStartMinutes % 60
-      workStartTime.setHours(startHours, startMins, 0, 0)
-
-      const workEndTime = new Date(currentDate)
-      const endHours = Math.floor(workEndMinutes / 60)
-      const endMins = workEndMinutes % 60
-      workEndTime.setHours(endHours, endMins, 0, 0)
-
-      // Filtere Events, die diesen Tag beeinflussen
-      const dayEvents = events.filter((event) => {
-        // Event-Enddatum ist nach oder gleich Tagesstart
-        // Event-Startdatum ist vor oder gleich Tagesende
-        return event.endTime > dayStart && event.startTime < dayEnd
-      })
-
-      // Merge benachbarte/überlappende Events
-      const mergedEvents = mergeAdjacentEvents(dayEvents)
-
-      // Berechne freie Zeitblöcke
-      let currentTime = new Date(workStartTime)
-      let hasAnyEvent = false
-
-      for (const event of mergedEvents) {
-        // Berechne Überschneidung mit Arbeitszeit
-        const eventStart = new Date(event.startTime)
-        const eventEnd = new Date(event.endTime)
-
-        // Limitiere auf Arbeitszeit
-        if (eventStart < workStartTime) {
-          eventStart.setTime(workStartTime.getTime())
+      let freeStart = workStart
+      for (const busy of busyIntervals) {
+        if (busy.startTime > freeStart) {
+          freeBlocks.push({
+            startTime: new Date(freeStart),
+            endTime: new Date(busy.startTime),
+            duration: getDurationMinutes(freeStart, busy.startTime),
+          })
         }
-        if (eventEnd > workEndTime) {
-          eventEnd.setTime(workEndTime.getTime())
-        }
-
-        // Wenn Event nach Arbeitsstart ist, gibt es einen freien Block davor
-        if (eventStart > currentTime) {
-          const duration = getBlockDurationMinutes(currentTime, eventStart)
-          if (duration > 0) {
-            freeBlocks.push({
-              startTime: new Date(currentTime),
-              endTime: new Date(eventStart),
-              duration,
-            })
-          }
-        }
-
-        currentTime = new Date(eventEnd)
-        hasAnyEvent = true
+        freeStart = busy.endTime
       }
 
-      // Freier Block nach letztem Event (bis Arbeitsende)
-      if (currentTime < workEndTime) {
-        const duration = getBlockDurationMinutes(currentTime, workEndTime)
-        if (duration > 0) {
-          freeBlocks.push({
-            startTime: new Date(currentTime),
-            endTime: new Date(workEndTime),
-            duration,
-          })
-        }
-      } else if (!hasAnyEvent) {
-        // Vollständig freier Arbeitstag (kein Event an diesem Tag)
-        const duration = getBlockDurationMinutes(workStartTime, workEndTime)
-        if (duration > 0) {
-          freeBlocks.push({
-            startTime: new Date(workStartTime),
-            endTime: new Date(workEndTime),
-            duration,
-          })
-        }
+      if (freeStart < workEnd) {
+        freeBlocks.push({
+          startTime: new Date(freeStart),
+          endTime: new Date(workEnd),
+          duration: getDurationMinutes(freeStart, workEnd),
+        })
       }
     }
 
-    // Nächster Tag
     currentDate.setDate(currentDate.getDate() + 1)
   }
 
   return freeBlocks
 }
 
-/**
- * Berechne Ereignisse pro Tag
- */
 export function calculateEventsByDay(
   events: CalendarEvent[],
   startDate: Date,
   endDate: Date,
 ): DayEventStats[] {
-  const eventsByDate: Map<string, DayEventStats> = new Map()
+  const analysisRange = getInclusiveAnalysisRange(startDate, endDate)
+  if (!analysisRange) return []
 
-  // Initialisiere alle Tage im Bereich mit 0 Events
-  const currentDate = new Date(startDate)
-  currentDate.setHours(0, 0, 0, 0)
+  const validEvents = events.filter(isValidEvent)
+  const stats: DayEventStats[] = []
+  const currentDate = new Date(analysisRange.startTime)
 
-  const endDateCopy = new Date(endDate)
-  endDateCopy.setHours(23, 59, 59, 999)
+  while (currentDate < analysisRange.endTime) {
+    const dayStart = new Date(currentDate)
+    const dayEnd = nextDay(dayStart)
+    const dayIntervals = validEvents
+      .map((event) => clipInterval(event.startTime, event.endTime, dayStart, dayEnd))
+      .filter((interval): interval is TimeInterval => interval !== null)
 
-  while (currentDate <= endDateCopy) {
-    const dateKey = currentDate.toISOString().split('T')[0]
-    eventsByDate.set(dateKey, {
-      date: new Date(currentDate),
-      eventCount: 0,
-      totalDuration: 0,
+    stats.push({
+      date: dayStart,
+      eventCount: dayIntervals.length,
+      totalDuration: dayIntervals.reduce(
+        (sum, interval) => sum + getDurationMinutes(interval.startTime, interval.endTime),
+        0,
+      ),
     })
     currentDate.setDate(currentDate.getDate() + 1)
   }
 
-  // Zähle Events pro Tag
-  for (const event of events) {
-    const dayStart = new Date(event.startTime)
-    dayStart.setHours(0, 0, 0, 0)
-
-    const dayEnd = new Date(event.startTime)
-    dayEnd.setHours(23, 59, 59, 999)
-
-    const dateKey = dayStart.toISOString().split('T')[0]
-
-    if (eventsByDate.has(dateKey)) {
-      const stats = eventsByDate.get(dateKey)!
-      stats.eventCount += 1
-      stats.totalDuration += getEventDurationMinutes(event)
-    } else {
-      // Event außerhalb des Bereichs - nur hinzufügen, wenn es innerhalb ist
-      if (event.startTime >= dayStart && event.startTime <= dayEnd) {
-        eventsByDate.set(dateKey, {
-          date: new Date(dayStart),
-          eventCount: 1,
-          totalDuration: getEventDurationMinutes(event),
-        })
-      }
-    }
-  }
-
-  // Sortiere nach Datum und gebe zurück
-  return Array.from(eventsByDate.values()).sort((a, b) => a.date.getTime() - b.date.getTime())
+  return stats
 }
 
-/**
- * Berechne alle Basiskennzahlen für einen Zeitraum
- */
 export function calculateBaseMetrics(
   events: CalendarEvent[],
   startDate: Date,
   endDate: Date,
   workingHoursConfig: WorkingHoursConfig = DEFAULT_WORKING_HOURS,
 ): BaseMetrics {
+  const analysisRange = getInclusiveAnalysisRange(startDate, endDate)
+  const relevantEvents = analysisRange
+    ? events
+        .filter(isValidEvent)
+        .map((event) => {
+          const interval = clipInterval(
+            event.startTime,
+            event.endTime,
+            analysisRange.startTime,
+            analysisRange.endTime,
+          )
+          return interval ? { ...event, ...interval } : null
+        })
+        .filter((event): event is CalendarEvent => event !== null)
+    : []
+
   return {
-    eventCount: calculateEventCount(events),
-    totalMeetingMinutes: calculateTotalMeetingMinutes(events),
-    averageMeetingDuration: calculateAverageMeetingDuration(events),
-    freeTimeBlocks: calculateFreeTimeBlocks(events, startDate, endDate, workingHoursConfig),
-    eventsByDay: calculateEventsByDay(events, startDate, endDate),
+    eventCount: calculateEventCount(relevantEvents),
+    totalMeetingMinutes: calculateTotalMeetingMinutes(relevantEvents),
+    averageMeetingDuration: calculateAverageMeetingDuration(relevantEvents),
+    freeTimeBlocks: calculateFreeTimeBlocks(
+      relevantEvents,
+      startDate,
+      endDate,
+      workingHoursConfig,
+    ),
+    eventsByDay: calculateEventsByDay(relevantEvents, startDate, endDate),
   }
 }
 
-/**
- * Formatiere Minuten in ein lesbares Format
- * z.B. 90 -> "1h 30m" oder "1,5h"
- */
 export function formatMinutesToHours(minutes: number): string {
-  if (!Number.isFinite(minutes) || minutes < 0) {
-    return '-'
-  }
+  if (!Number.isFinite(minutes) || minutes < 0) return '-'
 
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-
-  if (mins === 0) {
-    return `${hours}h`
-  }
-
-  return `${hours}h ${mins}m`
+  const roundedMinutes = Math.round(minutes)
+  const hours = Math.floor(roundedMinutes / 60)
+  const remainingMinutes = roundedMinutes % 60
+  return remainingMinutes === 0 ? `${hours}h` : `${hours}h ${remainingMinutes}m`
 }
 
-/**
- * Formatiere Minuten als gerundete Stunden
- * z.B. 90 -> "1,5h"
- */
 export function formatMinutesToDecimalHours(minutes: number): string {
-  if (!Number.isFinite(minutes) || minutes < 0) {
-    return '-'
-  }
-
-  const hours = minutes / 60
-  return `${hours.toFixed(1)}h`
+  if (!Number.isFinite(minutes) || minutes < 0) return '-'
+  return `${(minutes / 60).toFixed(1)}h`
 }
