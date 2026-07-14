@@ -6,6 +6,8 @@ Ein lokales Kalender Analyse Tool, das aus einer ICS Datei verständlich zeigt, 
 
 Die Anwendung soll helfen, Zeit und Energie sinnvoller zu nutzen, indem sie wichtige Zusammenhänge aus dem Kalender sichtbar macht. Der Fokus liegt auf klaren Einblicken, Datenschutz und einer schrittweisen Erweiterung der Funktionen.
 
+Die langfristige Ausrichtung, Zielgruppen, Nicht-Ziele und Leitprinzipien beschreibt die [ausführliche Produktvision](docs/product-vision.md).
+
 ## Qualitätsprüfungen
 
 Die folgenden Befehle stehen für lokale Prüfungen zur Verfügung:
