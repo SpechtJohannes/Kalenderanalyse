@@ -84,8 +84,68 @@
   margin-top: var(--space-4);
 }
 
+.analysis-period {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.analysis-period__selection,
+.analysis-period__custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.analysis-period label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.analysis-period select,
+.analysis-period input {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+}
+
+.analysis-period__summary,
+.analysis-period__error,
+.analysis-feature__empty {
+  margin: 0;
+}
+
+.analysis-period__error {
+  color: var(--color-error);
+}
+
+.analysis-feature__empty {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+}
+
 /* Responsive Design */
 @media (max-width: 640px) {
+  .analysis-period__selection,
+  .analysis-period__custom,
+  .analysis-period label,
+  .analysis-period select,
+  .analysis-period input {
+    width: 100%;
+  }
+
   .metrics-summary {
     grid-template-columns: repeat(2, 1fr);
   }
