@@ -317,10 +317,11 @@ describe('Basiskennzahlen', () => {
 
   describe('Formatierung und Rundung', () => {
     it('formatiert und rundet auf die nächste volle Minute', () => {
-      expect(formatMinutesToHours(0)).toBe('0h')
-      expect(formatMinutesToHours(60)).toBe('1h')
-      expect(formatMinutesToHours(89.6)).toBe('1h 30m')
-      expect(formatMinutesToHours(149.4)).toBe('2h 29m')
+      expect(formatMinutesToHours(0)).toBe('0 Min.')
+      expect(formatMinutesToHours(30)).toBe('30 Min.')
+      expect(formatMinutesToHours(60)).toBe('1 Std.')
+      expect(formatMinutesToHours(89.6)).toBe('1 Std. 30 Min.')
+      expect(formatMinutesToHours(149.4)).toBe('2 Std. 29 Min.')
       expect(formatMinutesToDecimalHours(90)).toBe('1.5h')
       expect(formatMinutesToDecimalHours(92)).toBe('1.5h')
     })
