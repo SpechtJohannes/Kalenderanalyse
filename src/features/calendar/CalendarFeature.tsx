@@ -5,7 +5,7 @@ import './CalendarFeature.css'
 import { ICS_FILE_ACCEPT, importCalendarFile } from './services/calendarFileImport'
 
 type CalendarFeatureProps = {
-  onImport: (events: CalendarEvent[]) => void
+  onImport: (events: CalendarEvent[] | undefined) => void
 }
 
 type ImportStatus =
@@ -23,7 +23,7 @@ export function CalendarFeature({ onImport }: CalendarFeatureProps) {
     importSequence.current = sequence
     const file = event.target.files?.[0]
 
-    onImport([])
+    onImport(undefined)
     if (!file) {
       setFileName(null)
       setStatus({ kind: 'error', message: 'Bitte wähle eine ICS-Datei aus.' })

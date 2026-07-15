@@ -42,8 +42,11 @@ describe('AnalysisFeature', () => {
 
     expect(screen.getByLabelText('Analysezeitraum')).toHaveValue('week')
     expect(screen.getByText(/08\.01\.2024 bis 14\.01\.2024/)).toBeInTheDocument()
-    expect(screen.getByText('Keine Termine im ausgewählten Zeitraum.')).toBeInTheDocument()
-    expect(eventCount()).toHaveTextContent('0')
+    expect(
+      screen.getByText('Importiere zuerst einen Kalender, um Diagramme und Kennzahlen anzuzeigen.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Termine' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Termine pro Wochentag' })).not.toBeInTheDocument()
   })
 
   it('aktualisiert Kennzahlen unmittelbar nach einer geänderten Auswahl', () => {
@@ -54,6 +57,14 @@ describe('AnalysisFeature', () => {
     render(<AnalysisFeature events={events} />)
 
     expect(eventCount()).toHaveTextContent('1')
+    expect(screen.getByRole('heading', { name: 'Termine pro Wochentag' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Meetingstunden pro Wochentag' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fokuszeit pro Wochentag' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Freie Zeitblöcke pro Wochentag' }),
+    ).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Analysezeitraum'), {
       target: { value: 'two-weeks' },
     })
@@ -63,7 +74,7 @@ describe('AnalysisFeature', () => {
   })
 
   it('zeigt und validiert einen benutzerdefinierten Zeitraum', () => {
-    render(<AnalysisFeature />)
+    render(<AnalysisFeature events={[]} />)
     fireEvent.change(screen.getByLabelText('Analysezeitraum'), {
       target: { value: 'custom' },
     })

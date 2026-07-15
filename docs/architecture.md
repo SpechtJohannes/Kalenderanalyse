@@ -52,6 +52,8 @@ Geschäftslogik und Berechnungen:
   - Durchschnittliche Meetingdauer
   - Freie Zeitblöcke (mit Zusammenführung überlappender/benachbarter Termine)
   - Termine pro Tag
+- **chartData** – rein typisierte Aggregation vorhandener Kennzahlen nach Montag bis Sonntag für
+  die Diagrammdarstellung; fehlende Wochentage werden mit Nullwerten ergänzt
 - **analysisPeriod** – Erzeugung, Validierung und Anwendung von Analysezeiträumen
 - **timeZone** – zentrale Kalender-, Tagesgrenzen- und Zeitzonenoperationen für `Europe/Berlin`
 
@@ -171,8 +173,16 @@ Auswahl in AnalysisFeature
   → AnalysisDateRange
   → Termine auf [startTime, endTime) filtern und begrenzen
   → calculateBaseMetricsForRange
-  → MetricsDisplay
+  → MetricsDisplay und chartData
+  → AnalysisCharts
 ```
+
+Die Diagramme verwenden semantisches HTML und CSS statt einer zusätzlichen
+Diagrammbibliothek. Dadurch bleibt der Produktionsbuild klein und die Darstellung kann mit den
+vorhandenen Design Tokens responsiv sowie ohne Abhängigkeit von SVG-Interna barrierearm umgesetzt
+werden. Die Komponenten berechnen keine fachlichen Kennzahlen; `chartData` erzeugt ausschließlich
+ein Darstellungsmodell aus `BaseMetrics`. Fokuszeit bezeichnet dabei die summierte ununterbrochene
+freie Zeit innerhalb der konfigurierten Arbeitszeit.
 
 Ein Termin wird berücksichtigt, wenn er den halb-offenen absoluten Zeitraum `[startTime, endTime)` überschneidet. Überragende Teile werden vor zeitbasierten Kennzahlen abgeschnitten. Ein Termin, der exakt an `startTime` endet oder exakt an `endTime` beginnt, liegt außerhalb. Die Auswahl wird im Zustand der Analysekomponente gehalten und bleibt deshalb erhalten, wenn sich die übergebenen Importdaten ändern; eine dauerhafte Speicherung über einen Neustart erfolgt nicht.
 

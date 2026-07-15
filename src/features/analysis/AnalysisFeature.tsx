@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { MetricsDisplay } from '../../shared/components/MetricsDisplay'
+import { AnalysisCharts } from '../../shared/components/AnalysisCharts'
 import { SectionCard } from '../../shared/components/SectionCard'
 import {
   ANALYSIS_PERIOD_OPTIONS,
@@ -21,7 +22,7 @@ function isAnalysisPeriodPreset(value: string): value is AnalysisPeriodPreset {
   return ANALYSIS_PERIOD_OPTIONS.some((option) => option.value === value)
 }
 
-export function AnalysisFeature({ events = [] }: AnalysisFeatureProps) {
+export function AnalysisFeature({ events }: AnalysisFeatureProps) {
   const now = useMemo(() => new Date(), [])
   const todayKey = useMemo(() => getLocalDateKey(now), [now])
   const [preset, setPreset] = useState<AnalysisPeriodPreset>(DEFAULT_ANALYSIS_PERIOD_PRESET)
@@ -34,7 +35,8 @@ export function AnalysisFeature({ events = [] }: AnalysisFeatureProps) {
   }, [customEnd, customStart, now, preset])
 
   const metrics = useMemo(
-    () => (validation.range ? calculateBaseMetricsForRange(events, validation.range) : null),
+    () =>
+      validation.range && events ? calculateBaseMetricsForRange(events, validation.range) : null,
     [events, validation.range],
   )
 
@@ -101,12 +103,18 @@ export function AnalysisFeature({ events = [] }: AnalysisFeatureProps) {
         )}
       </div>
 
+      {!events && (
+        <p className="analysis-feature__empty analysis-feature__empty--standalone">
+          Importiere zuerst einen Kalender, um Diagramme und Kennzahlen anzuzeigen.
+        </p>
+      )}
       {metrics && (
         <div className="analysis-feature__content">
           {metrics.eventCount === 0 && (
             <p className="analysis-feature__empty">Keine Termine im ausgewählten Zeitraum.</p>
           )}
           <MetricsDisplay metrics={metrics} />
+          {metrics.eventCount > 0 && <AnalysisCharts metrics={metrics} />}
         </div>
       )}
     </section>

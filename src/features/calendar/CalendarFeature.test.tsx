@@ -41,14 +41,14 @@ describe('CalendarFeature', () => {
   })
 
   it('importiert eine gültige Datei und gibt normalisierte Termine weiter', async () => {
-    const onImport = vi.fn<(events: CalendarEvent[]) => void>()
+    const onImport = vi.fn<(events: CalendarEvent[] | undefined) => void>()
     render(<CalendarFeature onImport={onImport} />)
 
     select(file('arbeit.ics', validCalendar))
 
     expect(screen.getByText('Ausgewählte Datei: arbeit.ics')).toBeInTheDocument()
     expect(await screen.findByRole('status')).toHaveTextContent('1 Termin erfolgreich importiert.')
-    expect(onImport).toHaveBeenNthCalledWith(1, [])
+    expect(onImport).toHaveBeenNthCalledWith(1, undefined)
     expect(onImport).toHaveBeenLastCalledWith([
       expect.objectContaining({ id: 'test-event', title: 'Planung', durationMinutes: 60 }),
     ])
@@ -70,7 +70,7 @@ describe('CalendarFeature', () => {
     select(calendarFile)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
-    expect(onImport).toHaveBeenCalledWith([])
+    expect(onImport).toHaveBeenCalledWith(undefined)
   })
 
   it('zeigt eine fehlende Auswahl und einen Lesefehler verständlich an', async () => {
@@ -104,7 +104,7 @@ describe('CalendarFeature', () => {
   it('ersetzt bei erneutem Import die vorherigen Daten und verwendet kein Netzwerk', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
-    const onImport = vi.fn<(events: CalendarEvent[]) => void>()
+    const onImport = vi.fn<(events: CalendarEvent[] | undefined) => void>()
     render(<CalendarFeature onImport={onImport} />)
 
     select(file('erster.ics', validCalendar))
@@ -124,7 +124,7 @@ describe('CalendarFeature', () => {
   })
 
   it('entfernt vorherige Daten, wenn ein neuer Import fehlschlägt', async () => {
-    const onImport = vi.fn<(events: CalendarEvent[]) => void>()
+    const onImport = vi.fn<(events: CalendarEvent[] | undefined) => void>()
     render(<CalendarFeature onImport={onImport} />)
 
     select(file('gültig.ics', validCalendar))
@@ -133,7 +133,7 @@ describe('CalendarFeature', () => {
     select(file('defekt.ics', 'kein Kalender'))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('kein gültiger ICS-Kalender')
-    expect(onImport).toHaveBeenLastCalledWith([])
+    expect(onImport).toHaveBeenLastCalledWith(undefined)
   })
 
   it('behält gültige Termine und weist auf nicht verarbeitbare Einträge hin', async () => {
