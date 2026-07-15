@@ -68,7 +68,9 @@ Zentrale Typendefinitionen:
 
 Feature-Module für die Anwendung:
 
-- **analysis** – Auswahl des Analysezeitraums, Aufruf der Kennzahlenberechnung und Ergebnisdarstellung
+- **analysis** – Auswahl des Analysezeitraums, Aufruf der Kennzahlenberechnung, reine fachliche
+  Bewertung problematischer Termine im Unterverzeichnis `domain` und Ergebnisdarstellung in
+  getrennten Komponenten
 - **calendar** – Dateiauswahl, Dateivalidierung, ICS-Parsing, Normalisierung und Übergabe an die Analyse
 - **insights** – Weitere Analysen und Empfehlungen (geplant)
 
