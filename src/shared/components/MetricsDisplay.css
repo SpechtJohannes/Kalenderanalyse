@@ -50,6 +50,109 @@
   margin: 0;
 }
 
+.analysis-feature__empty--standalone {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.analysis-charts {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.analysis-charts__heading h2,
+.analysis-charts__heading p,
+.weekday-chart h3,
+.weekday-chart p {
+  margin: 0;
+}
+
+.analysis-charts__heading p,
+.weekday-chart p {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.analysis-charts__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.weekday-chart {
+  min-width: 0;
+  padding: var(--space-4);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.weekday-chart__plot {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  height: 15rem;
+  margin-top: var(--space-4);
+}
+
+.weekday-chart__column {
+  display: grid;
+  grid-template-rows: 2.75rem 1fr auto;
+  min-width: 0;
+  text-align: center;
+}
+
+.weekday-chart__value {
+  align-self: end;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekday-chart__track {
+  display: flex;
+  align-items: end;
+  min-height: 0;
+  margin: var(--space-2) auto;
+  width: min(2rem, 75%);
+  background: var(--color-surface-accent);
+  border-bottom: 2px solid var(--color-border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.weekday-chart__bar {
+  width: 100%;
+  background: var(--color-chart-primary);
+  border: 1px solid var(--color-chart-border);
+  border-bottom: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.weekday-chart__label {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .analysis-period__error {
   color: var(--color-error);
 }
@@ -195,6 +298,10 @@
 @media (min-width: 960px) {
   .metrics-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .analysis-charts__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

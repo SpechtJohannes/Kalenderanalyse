@@ -10,6 +10,8 @@
   --color-error: #b91c1c;
   --color-success: #047857;
   --color-warning: #a16207;
+  --color-chart-primary: #6366f1;
+  --color-chart-border: #4338ca;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
@@ -47,6 +49,8 @@
     --color-error: #fca5a5;
     --color-success: #6ee7b7;
     --color-warning: #fde047;
+    --color-chart-primary: #a5b4fc;
+    --color-chart-border: #c7d2fe;
   }
 }
 

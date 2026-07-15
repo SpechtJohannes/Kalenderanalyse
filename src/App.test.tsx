@@ -50,7 +50,9 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /kalenderanalyse/i })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Übersicht' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Importiere zuerst einen Kalender, um Diagramme und Kennzahlen anzuzeigen.'),
+    ).toBeInTheDocument()
   })
 
   it('aktualisiert die Dashboard-Karten nach einem erfolgreichen Import', async () => {
@@ -74,8 +76,9 @@ describe('App', () => {
     await select(file('defekt.ics', 'kein Kalender'))
     expect(screen.getByRole('alert')).toBeInTheDocument()
 
-    expect(within(metricCard('Termine')).getByText('0')).toBeInTheDocument()
-    expect(metricCard('Meetingzeit')).toHaveTextContent('0 Min.')
-    expect(metricCard('Durchschnittliche Meetingdauer')).toHaveTextContent('0 Min.')
+    expect(screen.queryByRole('heading', { name: 'Termine' })).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Importiere zuerst einen Kalender, um Diagramme und Kennzahlen anzuzeigen.'),
+    ).toBeInTheDocument()
   })
 })

@@ -7,7 +7,7 @@ import { AppShell } from './shared/layout/AppShell'
 import type { CalendarEvent } from './shared/types/calendar'
 
 function App() {
-  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [events, setEvents] = useState<CalendarEvent[] | undefined>()
 
   return (
     <AppShell
