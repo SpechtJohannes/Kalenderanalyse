@@ -13,6 +13,9 @@ import { calculateBaseMetricsForRange } from '../../shared/services/metrics'
 import { addCalendarDays, getLocalDateKey } from '../../shared/services/timeZone'
 import type { AnalysisPeriodPreset } from '../../shared/types/analysis'
 import type { CalendarEvent } from '../../shared/types/calendar'
+import { filterEventsByDateRange } from '../../shared/services/analysisPeriod'
+import { ProblematicAppointmentsList } from './components/ProblematicAppointmentsList'
+import { findProblematicAppointments } from './domain/problematicAppointments'
 
 type AnalysisFeatureProps = {
   events?: CalendarEvent[]
@@ -37,6 +40,13 @@ export function AnalysisFeature({ events }: AnalysisFeatureProps) {
   const metrics = useMemo(
     () =>
       validation.range && events ? calculateBaseMetricsForRange(events, validation.range) : null,
+    [events, validation.range],
+  )
+  const problematicAppointments = useMemo(
+    () =>
+      validation.range && events
+        ? findProblematicAppointments(filterEventsByDateRange(events, validation.range))
+        : undefined,
     [events, validation.range],
   )
 
@@ -117,6 +127,7 @@ export function AnalysisFeature({ events }: AnalysisFeatureProps) {
           {metrics.eventCount > 0 && <AnalysisCharts metrics={metrics} />}
         </div>
       )}
+      {validation.range && <ProblematicAppointmentsList evaluations={problematicAppointments} />}
     </section>
   )
 }
